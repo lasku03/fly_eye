@@ -1,0 +1,63 @@
+<!-- HEADER -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="nav">
+    <nav class="navbar navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="/images/fly_eye_logo_without_background.png" alt="Fly eye logo" width="165" height="60">
+            </a>
+            <ul class="navbar-nav flex-row align-items-center ms-auto mx-3">
+                <li th:if="${session.erabiltzailea == null}" class="nav-item mx-3">
+                    <a href="/login" type="button" class="btn btn-primary botoia"><span
+                            th:text="#{nav.login}"></span></a>
+                </li>
+                <li th:if="${session.erabiltzailea == null}" class="nav-item md-3">
+                    <a href="/register" type="button" class="btn btn-outline-primary me-2 botoia-zuria"><span
+                            th:text="#{nav.signup}"></span></a>
+                </li>
+                <li th:if="${session.erabiltzailea != null}" class="nav-item dropdown ms-3">
+                    <a class="nav-link dropdown-toggle" id="profileDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-bars ikonoa fa-2xl"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown"
+                        style="position: absolute;">
+                        <li class="d-flex align-items-center">
+                            <a class="dropdown-item" href="/mapa"><i
+                                    class="fa-solid fa-map-location-dot ikonoa mx-2"></i><span
+                                    th:text="#{title.mapa1}"></span></a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <a class="dropdown-item" href="/bilaketa"><i
+                                    class="fa-solid fa-magnifying-glass-location ikonoa mx-2"></i><span
+                                    th:text="#{carousel.bilaketak}"></span></a>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <a class="dropdown-item" href="/txat"><i
+                                    class="fa-solid fa-comments ikonoa mx-2"></i><span
+                                    th:text="#{carousel.forum}"></span></a>
+                        </li>
+                    </ul>
+                </li>
+                <li th:if="${session.erabiltzailea != null}" class="nav-item dropdown mx-3">
+                    <a class="nav-link dropdown-toggle" id="profileDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-circle-user ikonoa fa-2xl"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown"
+                        style="position: absolute;">
+                        <li class="d-flex align-items-center">
+                            <a class="dropdown-item" href="/logout"><i
+                                    class="fa-solid fa-arrow-right-from-bracket ikonoa mx-2"></i><span
+                                    th:text="#{nav.logout}"></span></a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+
+</html>
+<!-- FIN HEADER -->

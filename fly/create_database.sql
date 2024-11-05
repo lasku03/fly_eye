@@ -1,0 +1,2 @@
+DROP DATABASE IF EXISTS fly_eye;
+CREATE DATABASE fly_eye;
