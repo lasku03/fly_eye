@@ -7,6 +7,12 @@ let pointsMap = new Array(360).fill(null);
 let perimeterMap = [];
 let radarAngle = 0;
 let centerPoint = {x: canvas.width / 2, y: canvas.height / 2};
+let radarAngles = [];
+
+function addAngle(newAngle) {
+    radarAngles.push(newAngle);
+    if (radarAngles.length > 50) radarAngles.shift();
+}
 
 // Función para dibujar el radar
 function drawRadar() {
@@ -46,8 +52,17 @@ function drawRadar() {
         ctx.stroke();
     }
 
-    let borderAnglePoint = polarToCartesian(radarAngle, 1)
-    drawLine("#2bf04b", centerPoint, borderAnglePoint);    
+    drawLines();
+}
+
+function drawLines() {
+    for (let i = 0; i < radarAngles.length; i++) {
+        let j = radarAngles.length - i;
+        let borderAnglePoint = polarToCartesian(radarAngles[j], 1)
+        let opacity = 0.02 * (50 - i);
+        let color = "rgba(43, 240, 75, " + opacity + ")";
+        drawLine(color, centerPoint, borderAnglePoint); 
+    }
 }
 
 function drawLine(color, initialPoint, endPoint) {
@@ -61,7 +76,7 @@ function drawLine(color, initialPoint, endPoint) {
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.arc(centerPoint.x, centerPoint.y, 2, 0, Math.PI * 2);
+    ctx.arc(initialPoint.x, initialPoint.y, 2, 0, Math.PI * 2);
     ctx.fill();
 }
 
@@ -89,19 +104,32 @@ function paintPoint(angle, distance) {
     // Convertir a coordenadas cartesianas
     const point = polarToCartesian(angle, distance);
 
-    // Dibujar el punto en el radar
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 4;
-    ctx.fillStyle = "red";
-
-    if (perimeterMap[angle] != 0) {
-        let perimeterPoint = polarToCartesian(angle, perimeterMap[angle].distance);
-        drawLine("#2bf04b", point, perimeterPoint);
+    let endPoint;
+    if (perimeterMap[angle].distance != 0) {
+        endPoint = polarToCartesian(angle, perimeterMap[angle].distance);
     }
     else {
-        let borderPoint = polarToCartesian(angle, 1);
-        drawLine("#2bf04b", point, borderPoint);
+        endPoint = polarToCartesian(angle, 1);
     }
+    let opacity = calculatePointOpacity(angle);
+    let color = "rgba(255, 0, 0, " + opacity + ")"
+    drawLine(color, point, endPoint);
+}
+
+function calculatePointOpacity(angle) {
+    let i = 0;
+    let opacity = 0;
+    while (i < radarAngles.length && opacity == 0) {
+        let j = radarAngles.length - i;
+        if (angle == radarAngles[j]) {
+            opacity = 0.2 + 0.016 * (50 - i);
+        }
+        i++;
+    }
+    if (opacity == 0) {
+        opacity = 0.2;
+    }
+    return opacity;
 }
 
 function scanPerimeter() {
@@ -132,30 +160,11 @@ function scanPerimeter() {
 function drawPerimeter() {
     drawRadar();
 
-    let previousPoint = null;
-    ctx.strokeStyle = "rgb(0 155 255)";
-    ctx.lineWidth = 1;
-    ctx.fillStyle = "rgb(0 155 255)";
-
     perimeterMap.forEach(({ angle, distance }) => {
-        const point = polarToCartesian(angle, distance);
-
         if (distance !== 0) {
-            if (previousPoint) {
-                // If there is a previous point, draw a line between both of them
-                ctx.beginPath();
-                ctx.moveTo(previousPoint.x, previousPoint.y);
-                ctx.lineTo(point.x, point.y);
-                ctx.stroke(); // Pain the line
-            }
-            // Draw this point
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, 1, 0, Math.PI * 2);
-            ctx.fill();
-
-            previousPoint = point;
-        } else {
-            previousPoint = null;
+            const perimeterPoint = polarToCartesian(angle, distance);
+            let borderAnglePoint = polarToCartesian(angle, 1)
+            drawLine("rgb(0 155 255)", perimeterPoint, borderAnglePoint);
         }
     });
 }
@@ -194,35 +203,6 @@ document.getElementById('selectPerimeterBtn').addEventListener('click', function
     }
 });
 
-
-/*document.getElementById('selectPerimeterBtn').addEventListener('click', function () {
-    fetch('/perimeters')
-        .then(response => response.json())
-        .then(data => {
-
-            const perimeterOptions = data.map(perimeter => {
-                // Modificar la cadena de fecha directamente si ya está en formato ISO
-                const formattedDate = perimeter.date.slice(0, 19).replace("T", " ");
-                return `ID: ${perimeter.perimeterID}, Name: ${perimeter.name}, Date: ${formattedDate}`;
-            }).join('\n');
-
-            const selectedPerimeterId = prompt(`Select a Perimeter:\n${perimeterOptions}`);
-
-            if (selectedPerimeterId) {
-                // Lógica para encontrar el perímetro correspondiente por ID
-                const selectedPerimeter = data.find(perimeter => perimeter.perimeterID.toString() === selectedPerimeterId);
-                if (selectedPerimeter) {
-                    getAndDrawPerimeterPoints(selectedPerimeter); // Implementa esta función para dibujar el perímetro
-                } else {
-                    alert('Invalid perimeter ID selected.');
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching perimeters:', error);
-        });
-});*/
-
 function getAndDrawPerimeterPoints(id) {
     fetch(`/perimeters/${id}/points`)
         .then(response => response.json())
@@ -233,11 +213,6 @@ function getAndDrawPerimeterPoints(id) {
         .catch(error => {
             console.error('Error fetching perimeter points:', error);
         });
-}
-
-// Función para cerrar el modal
-function closeModal() {
-    document.getElementById('perimeterListModal').style.display = 'none';
 }
 
 // Función para seleccionar un perímetro
@@ -257,7 +232,7 @@ function connectWebSocket() {
         stompClient.subscribe('/topic/points', function (message) {
             const radarPoint = JSON.parse(message.body);
             pointsMap[radarPoint.angle] = radarPoint.distance;
-            radarAngle = radarPoint.angle;
+            addAngle(radarPoint.angle);
             paintPoints();
         });
 
@@ -282,7 +257,7 @@ function fillPerimeterMap(radarPerimeter) {
 
         perimeterMap.push({ angle, distance: distance });
     });
-    radarAngle = perimeterMap[perimeterMap.length - 1].angle;
+    addAngle(perimeterMap[perimeterMap.length - 1].angle);
 }
 
 function addPerimeterToList(id, name, date) {
