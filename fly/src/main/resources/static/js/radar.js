@@ -5,7 +5,6 @@ let radarRadius = canvas.width / 2;
 
 let pointsMap = new Array(360).fill(null);
 let perimeterMap = [];
-let radarAngle = 0;
 let centerPoint = {x: canvas.width / 2, y: canvas.height / 2};
 let radarAngles = [];
 
@@ -132,31 +131,6 @@ function calculatePointOpacity(angle) {
     return opacity;
 }
 
-function scanPerimeter() {
-    // Solicitar el nombre del perímetro
-    const perimeterName = prompt("Please enter the perimeter name:");
-
-    // Si el usuario cancela o no ingresa un nombre, no proceder
-    if (perimeterName === null || perimeterName.trim() === "") {
-        alert("Scan canceled. No name was provided.");
-        return;
-    }
-
-    perimeterMap = [];
-    // Generar 360 valores aleatorios entre 0.8 y 1
-    for (let angle = 0; angle < 360; angle++) {
-        let randomDistance = (Math.random() * (1.05 - 0.8) + 0.8).toFixed(2); // Value between 0.8 and 1
-        if (randomDistance > 1) {
-            randomDistance = 0;
-        }
-        perimeterMap.push({ angle, distance: randomDistance });
-    }
-
-    drawPerimeter();
-
-    saveScan(perimeterName);
-}
-
 function drawPerimeter() {
     drawRadar();
 
@@ -168,40 +142,6 @@ function drawPerimeter() {
         }
     });
 }
-
-
-function saveScan(perimeterName) {
-    const perimeterData = {
-        name: perimeterName, // Nombre del perímetro
-        points: perimeterMap // Lista de puntos
-    };
-
-    fetch('/perimeters/save-scan', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(perimeterData)
-    })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Perimeter saved:', data);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-}
-
-// Mostrar lista de perímetros
-document.getElementById('selectPerimeterBtn').addEventListener('click', function () {
-    let chosenPerimeterItem = document.querySelector('.perimeterItem_chosen');
-    
-    // Verifica si se encontró el elemento
-    if (chosenPerimeterItem) {
-        let id = chosenPerimeterItem.id.slice(1);
-        getAndDrawPerimeterPoints(id); // Devuelve el id del li encontrado
-    }
-});
 
 function getAndDrawPerimeterPoints(id) {
     fetch(`/perimeters/${id}/points`)
@@ -215,103 +155,11 @@ function getAndDrawPerimeterPoints(id) {
         });
 }
 
-// Función para seleccionar un perímetro
-function selectPerimeter(perimeter) {
-    // Aquí puedes hacer el dibujado de los puntos en el radar
-    drawPerimeter(perimeter);
-    closeModal();
-}
-
-// WEB SOCKET
-function connectWebSocket() {
-    var socket = new SockJS('/radar-detection');
-    stompClient = Stomp.over(socket);
-    stompClient.connect({}, function (frame) {
-        console.log('Connected: ' + frame);
-
-        stompClient.subscribe('/topic/points', function (message) {
-            const radarPoint = JSON.parse(message.body);
-            pointsMap[radarPoint.angle] = radarPoint.distance;
-            addAngle(radarPoint.angle);
-            paintPoints();
-        });
-
-        stompClient.subscribe('/topic/newPerimeter', function (message) {
-            const radarPerimeter = JSON.parse(message.body);
-            addPerimeterToList(radarPerimeter.perimeterID, radarPerimeter.name, radarPerimeter.date);
-        });
-
-        stompClient.subscribe('/topic/newPerimeterPoint', function (message) {
-            const radarPerimeter = JSON.parse(message.body);
-            fillPerimeterMap(radarPerimeter)
-            drawPerimeter();
-        });
-    });
-}
-
-function fillPerimeterMap(radarPerimeter) {
-    perimeterMap = [];
-    radarPerimeter.points.forEach(radarPoint => {
-        const angle = radarPoint.angle;
-        const distance = radarPoint.distance;
-
-        perimeterMap.push({ angle, distance: distance });
-    });
-    addAngle(perimeterMap[perimeterMap.length - 1].angle);
-}
-
-function addPerimeterToList(id, name, date) {
-    const perimeterList = document.getElementById("perimeterList");
-
-    // Create li
-    const newPerimeterItem = document.createElement("li");
-    newPerimeterItem.id = `p${id}`;
-    newPerimeterItem.className = 'perimeterItem';
-
-    // Create ID and name span
-    const idNameSpan = document.createElement("span");
-    idNameSpan.innerHTML = `ID: ${id} &nbsp;&nbsp;Name: ${name}`;
-
-    // Crea date span
-    const formattedDate = date.slice(0, 19).replace("T", " ");
-    const dateSpan = document.createElement("span");
-    dateSpan.innerHTML = `&nbsp;&nbsp;Date: ${formattedDate}`;
-
-    // Add spans to the li
-    newPerimeterItem.appendChild(idNameSpan);
-    newPerimeterItem.appendChild(document.createElement("br")); // Salto de línea
-    newPerimeterItem.appendChild(dateSpan);
-
-    // Add li to the list
-    perimeterList.appendChild(newPerimeterItem);
-
-    // Add listener
-    addListener();
-}
-
-function addListener() {
-    let perimeterItems = document.querySelectorAll(".perimeterItem");
-
-    perimeterItems[perimeterItems.length - 1].addEventListener("click", () => {
-        choosePerimeterItem(perimeterItems.length - 1);
-    });
-}
-
-function addListeners() {
-    let perimeterItems = document.querySelectorAll(".perimeterItem");
-
-    for (let i = 0; i < perimeterItems.length; i++) {        
-        perimeterItems[i].addEventListener("click", () => {
-            choosePerimeterItem(i);
-        });
-    }
-}
-
 function choosePerimeterItem(num) {
     let perimeterItems = document.querySelectorAll(".perimeterItem");
     for (let i = 0; i < perimeterItems.length; i++) {
         if (i == num) {
-            perimeterItems[i].classList.toggle("perimeterItem_chosen");
+            perimeterItems[i].classList.add("perimeterItem_chosen");
         }
         else {
             perimeterItems[i].classList.remove("perimeterItem_chosen");
@@ -322,5 +170,3 @@ function choosePerimeterItem(num) {
 
 // Paint the radar
 drawRadar();
-addListeners();
-connectWebSocket();

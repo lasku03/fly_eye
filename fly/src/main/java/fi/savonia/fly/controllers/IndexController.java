@@ -18,6 +18,14 @@ public class IndexController {
     @GetMapping("/")
     public ModelAndView index(Model model) {
         model.addAttribute("perimeters", perimeterService.getRadarPerimeterList());
-        return new ModelAndView("radar");
+        model.addAttribute("page", "radar");
+        return new ModelAndView("index");
+    }
+
+    @GetMapping("/history")
+    public ModelAndView history(Model model) {
+        model.addAttribute("perimeters", perimeterService.getRadarPerimeterList());
+        model.addAttribute("page", "history");
+        return new ModelAndView("history");
     }
 }

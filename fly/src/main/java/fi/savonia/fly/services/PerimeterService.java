@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import fi.savonia.fly.controllers.RadarState;
+import fi.savonia.fly.domain.detection.model.Detection;
+import fi.savonia.fly.domain.detection.model.RadarDetection;
 import fi.savonia.fly.domain.perimeter.model.Perimeter;
 import fi.savonia.fly.domain.perimeter.model.RadarPerimeter;
 import fi.savonia.fly.domain.point.model.Point;
@@ -51,6 +53,17 @@ public class PerimeterService {
         Optional<Perimeter> perimeter = perimeterRepository.findById(id);
         List<Point> points = perimeter.get().getPoints();
         return points;
+    }
+
+    public List<RadarDetection> findRadarDetectionsByPerimeterId(int id) {
+        // TODO Auto-generated method stub
+        Optional<Perimeter> perimeter = perimeterRepository.findById(id);
+        List<Detection> detections = perimeter.get().getDetections();
+        List<RadarDetection> radarDetections = new ArrayList<>();
+        for (Detection detection : detections) {
+            radarDetections.add(new RadarDetection(detection));
+        }
+        return radarDetections;
     }
 
     public void createPerimeter() {

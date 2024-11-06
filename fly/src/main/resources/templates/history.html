@@ -9,7 +9,7 @@
     <title>Radar Point Visualization</title>
     <link rel="icon" type="image/png" href="/images/fly_eye_icon_without_background.png" />
     <link rel="stylesheet" href="/css/main.css">
-    <link rel="stylesheet" href="/css/radar.css">
+    <link rel="stylesheet" href="/css/history.css">
     <script src="https://kit.fontawesome.com/671e0cb2b6.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
@@ -18,22 +18,33 @@
 <body>
 
     <!-- HEADER -->
-    <div id="header" th:insert="~{fragments/nav :: nav}"></div>
+    <div id="navigation" th:insert="~{fragments/nav :: nav}"></div>
     <!-- END HEADER -->
 
     <main>
         <aside>
-            <h3>Perimeters</h3>
+            <h1>History</h1>
+            <div id="buttonsDiv" class="visually-hidden">
+                <div id="goBackDiv">
+                    <a id="goBackBtn" class="is-align-self-center">
+                        <i class="fas fa-arrow-left fa-xl"></i>
+                    </a>
+                </div>
+                <div id="playDiv">
+                    <a id="playBtn" class="is-align-self-center">
+                        <i class="fas fa-play fa-xl"></i>
+                    </a>
+                    <a id="stopBtn" class="is-align-self-center">
+                        <i class="fas fa-stop fa-xl"></i>
+                    </a>
+                </div>
+            </div>
             <ul id="perimeterList">
                 <li th:id="'p'+${perimeter.perimeterID}" class="perimeterItem" th:each="perimeter : ${perimeters}">
                     <span th:text="'ID: ' + ${perimeter.perimeterID} + ' &nbsp;&nbsp;Name: ' + ${perimeter.name}"></span><br>
                     <span th:text="'&nbsp;&nbsp;Date: ' + ${#dates.format(perimeter.date, 'yyyy/MM/dd HH:mm:ss')}"></span>
                 </li>
             </ul>
-            <div>
-                <button id="scanPerimeter" onclick="scanPerimeter()">Scan Perimeter</button>
-                <button id="selectPerimeterBtn">Select Perimeter</button>
-            </div>
         </aside>
         <section>
             <!-- Canvas para dibujar el radar -->
@@ -50,7 +61,7 @@
     <!-- FIN FOOTER -->
 
     <script src="/js/radar.js"></script>
-
+    <script src="/js/history.js"></script>
 </body>
 
 </html>

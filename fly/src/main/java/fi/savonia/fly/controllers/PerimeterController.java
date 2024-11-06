@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import fi.savonia.fly.domain.detection.model.Detection;
+import fi.savonia.fly.domain.detection.model.RadarDetection;
 import fi.savonia.fly.domain.perimeter.model.Perimeter;
 import fi.savonia.fly.domain.perimeter.model.RadarPerimeter;
 import fi.savonia.fly.domain.point.model.Point;
@@ -54,6 +56,17 @@ public class PerimeterController {
         RadarState.setCurrentPerimeter(perimeterService.findPerimeterByPerimeterId(id));
         if (points != null) {
             return ResponseEntity.ok(points);
+        } else {
+            return ResponseEntity.notFound().build(); // Manejo de error si no se encuentra el perímetro
+        }
+    }
+
+    @GetMapping("/{id}/detections")
+    public ResponseEntity<List<RadarDetection>> getPerimeterDetections(@PathVariable int id) {
+        List<RadarDetection> radarDetections = perimeterService.findRadarDetectionsByPerimeterId(id);
+        RadarState.setCurrentHistoryPerimeter(perimeterService.findPerimeterByPerimeterId(id));
+        if (radarDetections != null) {
+            return ResponseEntity.ok(radarDetections);
         } else {
             return ResponseEntity.notFound().build(); // Manejo de error si no se encuentra el perímetro
         }

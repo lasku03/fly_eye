@@ -1,0 +1,20 @@
+aside {
+    grid-template-rows: auto 1fr auto;
+}
+
+aside div {
+    display: flex;
+}
+
+aside div button {
+    width: 50%;
+    margin-bottom: 5px;
+    margin-left: 5px;
+    margin-right: 5px;
+    border-radius: 10px;
+    background-color: white;
+}
+
+aside div button:hover {
+    background-color: lightgray;
+}

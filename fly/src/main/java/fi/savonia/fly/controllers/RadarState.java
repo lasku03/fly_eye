@@ -7,6 +7,7 @@ public class RadarState {
     
     private static boolean direction = true;
     private static Perimeter currentPerimeter = null;
+    private static Perimeter currentHistoryPerimeter = null;
     private static Detection currentDetection = null;
     private static int lastPerimeterAngle = 0;
     private static int lastDetectionAngle = 0;
@@ -40,5 +41,11 @@ public class RadarState {
     }
     public static void setCurrentDetection(Detection currentDetection) {
         RadarState.currentDetection = currentDetection;
+    }
+    public static Perimeter getCurrentHistoryPerimeter() {
+        return currentHistoryPerimeter;
+    }
+    public static void setCurrentHistoryPerimeter(Perimeter currentHistoryPerimeter) {
+        RadarState.currentHistoryPerimeter = currentHistoryPerimeter;
     }
 }

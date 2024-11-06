@@ -1,0 +1,59 @@
+aside {
+    grid-template-rows: auto auto 1fr;
+}
+
+aside div {
+    display: flex;
+}
+
+aside div div {
+    width: 50%;
+}
+
+aside {
+    margin: 1px;
+}
+
+aside div div {
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+#playDiv {
+    display: flex;
+    justify-content: flex-end; /* Mueve los enlaces hacia la derecha */
+    gap: 10px; /* Espacio entre los enlaces si lo deseas */
+}
+
+aside div button:hover {
+    background-color: lightgray;
+}
+
+#goBackBtn {
+    color: white;
+}
+
+#goBackBtn:hover {
+    color: lightgray;
+}
+
+#playBtn {
+    color: green;
+}
+
+#playBtn:hover {
+    color: darkgreen;
+}
+
+#stopBtn {
+    color: red;
+}
+
+#stopBtn:hover {
+    color: darkred;
+}
+
+.animating {
+    background-color: lightblue;
+}
