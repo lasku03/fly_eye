@@ -3,7 +3,7 @@
 
 #define motorSpeed 50   // Motorspeed in % (dutycycle)
 
-enMotorState state = STOP;
+static enMotorState state = STOP;
 
 void mot_Init() {
   state = STOP;
