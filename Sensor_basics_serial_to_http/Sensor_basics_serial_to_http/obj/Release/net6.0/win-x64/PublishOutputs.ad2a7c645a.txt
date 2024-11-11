@@ -1,0 +1,2 @@
+C:\Users\domin\source\repos\Exchange_SAVONIA\Sensor_basics_PROJECT\Sensor_basics_serial_to_http\Sensor_basics_serial_to_http\bin\Release\net6.0\publish\win-x64\Sensor_basics_serial_to_http.pdb
+C:\Users\domin\source\repos\Exchange_SAVONIA\Sensor_basics_PROJECT\Sensor_basics_serial_to_http\Sensor_basics_serial_to_http\bin\Release\net6.0\publish\win-x64\Sensor_basics_serial_to_http.exe
