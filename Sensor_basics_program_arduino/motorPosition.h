@@ -15,6 +15,7 @@
 #define MOTORPOSITION_H_
 
 // includes
+#include <stdint.h>
 #include "motorDriver.h"
 
 // ---------

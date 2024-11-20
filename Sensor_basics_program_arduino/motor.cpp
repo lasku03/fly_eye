@@ -1,5 +1,7 @@
+#include <Arduino.h>
 #include "motor.h"
 #include "motorDriver.h"
+#include "motorPosition.h"
 
 #define motorSpeed 50   // Motorspeed in % (dutycycle)
 

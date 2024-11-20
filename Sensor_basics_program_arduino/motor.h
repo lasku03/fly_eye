@@ -20,7 +20,7 @@ enum enMotorState {
   RUN
 };
 
-/ ---------
+// ---------
 // Functions
 // ---------
 

@@ -15,10 +15,13 @@
 #ifndef MOTORDRIVER_H_
 #define MOTORDRIVER_H_
 
+// includes
+#include <stdint.h>
+
 // Hardware pins
-#define ENABLE_PIN 1
-#define PWM_PIN 2
-#define DIRECTION_PIN 3
+#define IN1_PIN 4
+#define IN2_PIN 2
+#define PWM_PIN 3
 
 // Enums
 enum enDirection {
@@ -48,7 +51,7 @@ void motdriv_Init();
 void motdriv_Drive(uint8_t speed, enDirection direction);
 
 /**
- * @brief Stops de motor.
+ * @brief Stops the motor.
  *
  * @pre Inititalization of the driver with the function Init().
  */
