@@ -6,12 +6,13 @@ namespace Sensor_basics_serial_to_http
     {
         static void Main(string[] args)
         {
-            SerialComArduino serialComArduino = new SerialComArduino();
-            RelaySerial2Http relaySerial2Http = new RelaySerial2Http(serialComArduino);
+            //SerialComArduino serialComArduino = new SerialComArduino();
+            //RelaySerial2Http relaySerial2Http = new RelaySerial2Http(serialComArduino);
 
-            TestSerialPortArduino testSerial = new TestSerialPortArduino(serialComArduino);
-            //TestHttpRequest.Test();
-
+            //TestSerialPortArduino testSerial = new TestSerialPortArduino(serialComArduino);
+            //TestHttpRequest.TestSend();
+            TestHttpRequest.TestReceive();
+            
 
 
 

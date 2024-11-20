@@ -238,11 +238,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\domin\\source\\repos\\Exchange_SAVONIA\\Sensor_basics_PROJECT\\Sensor_basics_serial_to_http\\Sensor_basics_serial_to_http\\Sensor_basics_serial_to_http.csproj",
+      "projectUniqueName": "C:\\Users\\domin\\source\\repos\\Exchange_SAVONIA\\Sensor_basics_PROJECT\\fly_eye\\Sensor_basics_serial_to_http\\Sensor_basics_serial_to_http\\Sensor_basics_serial_to_http.csproj",
       "projectName": "Sensor_basics_serial_to_http",
-      "projectPath": "C:\\Users\\domin\\source\\repos\\Exchange_SAVONIA\\Sensor_basics_PROJECT\\Sensor_basics_serial_to_http\\Sensor_basics_serial_to_http\\Sensor_basics_serial_to_http.csproj",
+      "projectPath": "C:\\Users\\domin\\source\\repos\\Exchange_SAVONIA\\Sensor_basics_PROJECT\\fly_eye\\Sensor_basics_serial_to_http\\Sensor_basics_serial_to_http\\Sensor_basics_serial_to_http.csproj",
       "packagesPath": "C:\\Users\\domin\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\domin\\source\\repos\\Exchange_SAVONIA\\Sensor_basics_PROJECT\\Sensor_basics_serial_to_http\\Sensor_basics_serial_to_http\\obj\\",
+      "outputPath": "C:\\Users\\domin\\source\\repos\\Exchange_SAVONIA\\Sensor_basics_PROJECT\\fly_eye\\Sensor_basics_serial_to_http\\Sensor_basics_serial_to_http\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\domin\\AppData\\Roaming\\NuGet\\NuGet.Config",

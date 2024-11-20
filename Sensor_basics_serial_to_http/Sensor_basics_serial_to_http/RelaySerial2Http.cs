@@ -14,7 +14,7 @@ namespace Sensor_basics_serial_to_http
         public RelaySerial2Http(SerialComArduino serialComArduino)
         {
             // choose host address
-            Console.WriteLine("Enter host IP-address. Enter l + enter for localhost.");
+            Console.WriteLine("Enter host IP-address. Enter 'l' + 'enter' for localhost.");
             string input = Console.ReadLine();
             if(input == "l")    // localhost
             {
@@ -35,7 +35,7 @@ namespace Sensor_basics_serial_to_http
             string distance = e.Distance;
 
             /*HttpSendData.SendGetRequest(host, angle, distance);*/
-            HttpSendData.SendPostRequest(host, angle, distance);
+            HttpSend.SendData(host, angle, distance);
         }
     }
 }
