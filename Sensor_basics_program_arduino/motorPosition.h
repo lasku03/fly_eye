@@ -18,6 +18,10 @@
 #include <stdint.h>
 #include "motorDriver.h"
 
+// Hardware pins
+#define POSITION_PIN 3
+#define POSITION_REF_PIN 2
+
 // ---------
 // Functions
 // ---------
@@ -61,7 +65,7 @@ void motpos_SetToZero();
  *
  * @pre Inititalization of the driver with the function Init().
  */
-void motpos_ChangeDirectionManually(enDirection direction);
+void motpos_ChangeDirectionManually(enDirection directionNew);
 
 /**
  * @brief Increment or decrement the actual position depending on the direction. This function should be called out of the ISR.
@@ -69,5 +73,13 @@ void motpos_ChangeDirectionManually(enDirection direction);
  * @pre Inititalization of the driver with the function Init().
  */
 void motpos_ChangeByOne();
+
+/**
+ * @brief Debounce and handle ISR logic for the sensor inputs in a hyperloop.
+ *
+ * @pre Inititalization of the driver with the function Init().
+ * @post Handles Debouncing of ISR logic.
+ */
+void motpos_DoWork();
 
 #endif

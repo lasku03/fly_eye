@@ -7,7 +7,6 @@ void motdriv_Init() {
   pinMode(IN2_PIN, OUTPUT);
   pinMode(PWM_PIN, OUTPUT);
 
-
   // Set all pins to low
   digitalWrite(IN1_PIN, LOW);
   digitalWrite(IN2_PIN, LOW);

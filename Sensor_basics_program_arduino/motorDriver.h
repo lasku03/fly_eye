@@ -19,9 +19,9 @@
 #include <stdint.h>
 
 // Hardware pins
-#define IN1_PIN 4
-#define IN2_PIN 2
-#define PWM_PIN 3
+#define IN1_PIN 9
+#define IN2_PIN 8
+#define PWM_PIN 10
 
 // Enums
 enum enDirection {
