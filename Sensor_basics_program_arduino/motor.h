@@ -16,8 +16,10 @@
 
 // Enums
 enum enMotorState {
-  STOP,
-  RUN
+  MOT_STOP,
+  MOT_RUN,
+  MOT_BREAK,
+  MOT_WAIT
 };
 
 // ---------
