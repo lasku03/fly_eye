@@ -3,7 +3,7 @@
 #include "motorDriver.h"
 #include "motorPosition.h"
 
-#define motorSpeed 60   // Motorspeed in % (dutycycle)
+#define motorSpeed 35   // Motorspeed in % (dutycycle)
 
 static enMotorState state = MOT_STOP;
 

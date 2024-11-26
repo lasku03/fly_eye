@@ -57,8 +57,8 @@ enSerRxCmd sercom_ReadCmdWait() {
     if (Serial.available() > 0) {
       char received = Serial.read();  // Read the next character
 
-      Serial.print("Char read from serial buffer: ");
-      Serial.println(received);
+      // Serial.print("Char read from serial buffer: ");
+      // Serial.println(received);
 
       if (received == '\r') {  // Check if return character is entered
         break;
@@ -80,9 +80,17 @@ enSerRxCmd sercom_ReadCmdWait() {
 
 enSerRxCmd sercom_ReadCmdWithoutWaiting() {
   String input = Serial.readStringUntil('\n');
+  input.trim();
+  // Serial.print("String received: ");
+  // Serial.println(input);
   enSerRxCmd cmd = sercom_StringToCmd(input);
+  // Serial.print("Cmd received: ");
+  // Serial.println(cmd);
 
-  return cmd;
+  if(cmd >= START && cmd <= SCANPERIM) {
+    return cmd;
+  }
+  return;
 }
 
 void sercom_WaitForCmd(enSerRxCmd cmdExp) {
@@ -90,8 +98,8 @@ void sercom_WaitForCmd(enSerRxCmd cmdExp) {
 
   while (true) {
     cmd = sercom_ReadCmdWait();
-    Serial.print("Received cmd: ");
-    Serial.println(cmd);
+    // Serial.print("Received cmd: ");
+    // Serial.println(cmd);
     if (cmd == cmdExp) {
       break;
     }
