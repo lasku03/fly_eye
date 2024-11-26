@@ -106,5 +106,6 @@ void motpos_DoWork() {
       }
     }
     isrZeroTriggered = false;
+    Serial.println("ISR zero");
   }
 }
