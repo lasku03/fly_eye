@@ -35,17 +35,17 @@ void sm_DoWork() {
       Serial.println("Wait for 'get ready'");
       sercom_WaitForCmd(GETREADY);
       Serial.println("Drive to zero position...");
-      // Fall trough
+      mot_Run();
+      state = SM_ZERO;
+      break;
     case SM_ZERO:  // Drive to the zero position slowly
-      // todo!!!
-      actualPos = motpos_GetActual();
-      Serial.print("Actual position: ");
-      Serial.println(actualPos);
-      if (actualPos <= 1 || actualPos >= 359) {
+      if (digitalRead(POSITION_REF_PIN)) {
+        mot_Stop();
         state = SM_READY;
       }
       break;
     case SM_READY:  // Send 'ready' over serial communication
+      motpos_ChangeDirectionManually(CLOCK_WISE);
       sercom_WriteCmd(READY);
       state = SM_WAIT;
       Serial.println("Wait for command ('start' or 'start perimeter scan')");
@@ -71,8 +71,8 @@ void sm_DoWork() {
       break;
     case SM_PERIM2:  // Do perimeter scan until the end
       sm_DoMeasurement();
-      actualPos = motpos_GetActual();
-      if (actualPos <= 1 || actualPos >= 359) {
+      if (digitalRead(POSITION_REF_PIN)) {
+        mot_Stop();
         state = SM_PERIMIO;
         Serial.println("Perimeter scan done");
       }
