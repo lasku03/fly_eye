@@ -79,16 +79,18 @@ enSerRxCmd sercom_ReadCmdWait() {
 }
 
 enSerRxCmd sercom_ReadCmdWithoutWaiting() {
-  String input = Serial.readStringUntil('\n');
-  input.trim();
-  // Serial.print("String received: ");
-  // Serial.println(input);
-  enSerRxCmd cmd = sercom_StringToCmd(input);
-  // Serial.print("Cmd received: ");
-  // Serial.println(cmd);
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    input.trim();
+    // Serial.print("String received: ");
+    // Serial.println(input);
+    enSerRxCmd cmd = sercom_StringToCmd(input);
+    // Serial.print("Cmd received: ");
+    // Serial.println(cmd);
 
-  if(cmd >= START && cmd <= SCANPERIM) {
-    return cmd;
+    if (cmd >= START && cmd <= SCANPERIM) {
+      return cmd;
+    }
   }
   return;
 }

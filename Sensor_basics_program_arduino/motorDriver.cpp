@@ -76,6 +76,8 @@ void motdriv_Drive(uint8_t speed, enDirection direction) {
     default:
       break;
   }
+  // Serial.print("Direction motor drive: ");
+  // Serial.println(direction);
 
   // Set PWM dutycycle
   dutyCicle = int(speed) * 255 / 100;

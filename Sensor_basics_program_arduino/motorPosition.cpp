@@ -7,7 +7,7 @@ static enDirection direction = CLOCK_WISE;
 static bool isrPositionTriggered = false;
 static bool isrZeroTriggered = false;
 
-static const unsigned int noOfTurnsPerDirection = 2;
+static const unsigned int noOfTurnsPerDirection = 1;
 static unsigned int noOfTurns = 0;
 
 static const unsigned int noOfPositionPoints = 18; // The effective resolution is twice the number of position points, because the ISR is triggered with rising and falling edge.
@@ -67,7 +67,8 @@ void motpos_ChangeByOne() {
 void motpos_DoWork() {
   static unsigned long timePrevPosition = 0;
   static unsigned long timePrevZero = 0;
-  const unsigned long debounceTimeMs = 50;
+  const unsigned long debounceTimeMsPosition = 50;
+  const unsigned long debounceTimeMsZero = 500;
   unsigned long timeActual = millis();
 
   enDirection directionNew;
@@ -78,7 +79,7 @@ void motpos_DoWork() {
     // Serial.println(timePrevPosition);
 
     // Check if the interrupt is within the debounce window
-    if (timeActual - timePrevPosition >= debounceTimeMs) {
+    if (timeActual - timePrevPosition >= debounceTimeMsPosition) {
       timePrevPosition = timeActual;
       // Serial.println("ChangeByOne");
       motpos_ChangeByOne();
@@ -89,7 +90,7 @@ void motpos_DoWork() {
   // Handling of ISR Zero
   if (isrZeroTriggered) {
     // Check if the interrupt is within the debounce window
-    if (timeActual - timePrevZero >= debounceTimeMs) {
+    if (timeActual - timePrevZero >= debounceTimeMsZero) {
       timePrevZero = timeActual;
       motpos_SetToZero();
       

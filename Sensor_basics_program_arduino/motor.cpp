@@ -3,7 +3,7 @@
 #include "motorDriver.h"
 #include "motorPosition.h"
 
-#define motorSpeed 50   // Motorspeed in % (dutycycle)
+#define motorSpeed 50  // Motorspeed in % (dutycycle)
 
 static enMotorState state = MOT_STOP;
 
@@ -15,7 +15,9 @@ void mot_Init() {
 }
 
 void mot_Run() {
-  state = MOT_RUN;
+  if (state == MOT_STOP) {
+    state = MOT_RUN;
+  }
 }
 
 void mot_Stop() {
@@ -31,13 +33,13 @@ void mot_DoWork() {
   static enDirection directionOld;
   unsigned long timeActual;
   static unsigned long timePrev;
-  switch(state) {
+  switch (state) {
     case MOT_STOP:
       motdriv_Stop();
       break;
     case MOT_RUN:
       direction = motpos_GetDirection();
-      if(directionOld != direction) {
+      if (directionOld != direction) {
         state = MOT_BREAK;
         timePrev = millis();
         break;
@@ -49,7 +51,7 @@ void mot_DoWork() {
       directionOld = direction;
       // Wait a moment (500ms)
       timeActual = millis();
-      if(timeActual - timePrev >= 500) {
+      if (timeActual - timePrev >= 0) {
         state = MOT_WAIT;
         timePrev = timeActual;
       }
@@ -58,7 +60,7 @@ void mot_DoWork() {
       motdriv_Stop();
       // Wait a moment (500ms)
       timeActual = millis();
-      if(timeActual - timePrev >= 500) {
+      if (timeActual - timePrev >= 500) {
         state = MOT_RUN;
       }
       break;
