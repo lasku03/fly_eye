@@ -7,6 +7,7 @@ void sercom_Init() {
 }
 
 void sercom_WriteData(uint16_t angle, float distance, enDirection direction) {
+  Serial.print("data:");
   Serial.print(angle);
   Serial.print(";");
   Serial.print(distance);
@@ -22,12 +23,13 @@ void sercom_WriteData(uint16_t angle, float distance, enDirection direction) {
 }
 
 void sercom_WriteCmd(enSerTxCmd cmd) {
+  Serial.print("cmd:");
   switch (cmd) {
     case READY:
       Serial.println("ready");
       break;
     case PERIMIO:
-      Serial.println("perimeter scan done");
+      Serial.println("perimio");
       break;
     default:
       break;
@@ -41,9 +43,9 @@ enSerRxCmd sercom_StringToCmd(String input) {
     return START;
   } else if (input == "stop") {
     return STOP;
-  } else if (input == "get ready") {
+  } else if (input == "getready") {
     return GETREADY;
-  } else if (input == "start perimeter scan") {
+  } else if (input == "perimscan") {
     return SCANPERIM;
   } else {
     return;

@@ -32,7 +32,7 @@ void sm_DoWork() {
   enSerRxCmd cmd = -1;
   switch (state) {
     case SM_INIT:
-      Serial.println("Wait for 'get ready'");
+      Serial.println("Wait for 'getready'");
       sercom_WaitForCmd(GETREADY);
       Serial.println("Drive to zero position...");
       mot_Run();
@@ -48,7 +48,7 @@ void sm_DoWork() {
       motpos_ChangeDirectionManually(CLOCK_WISE);
       sercom_WriteCmd(READY);
       state = SM_WAIT;
-      Serial.println("Wait for command ('start' or 'start perimeter scan')");
+      Serial.println("Wait for command ('start' or 'perimscan')");
       break;
     case SM_WAIT:  // Wait for command ('start' or 'start perimeter scan')
       cmd = sercom_ReadCmdWithoutWaiting();
@@ -80,7 +80,7 @@ void sm_DoWork() {
     case SM_PERIMIO:  // Perimeter scan done
       sercom_WriteCmd(PERIMIO);
       state = SM_WAIT;
-      Serial.println("Wait for command ('start' or 'start perimeter scan')");
+      Serial.println("Wait for command ('start' or 'perimscan')");
       break;
     case SM_RUN:  // Do the measurement
       sm_DoMeasurement();
@@ -97,7 +97,7 @@ void sm_DoWork() {
     case SM_STOP:  // Stop measurement
       mot_Stop();
       state = SM_WAIT;
-      Serial.println("Wait for command ('start' or 'start perimeter scan')");
+      Serial.println("Wait for command ('start' or 'perimscan')");
       break;
   }
   // Serial.println(state);
