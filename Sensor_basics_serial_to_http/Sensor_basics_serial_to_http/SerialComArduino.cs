@@ -6,8 +6,14 @@ namespace Sensor_basics_serial_to_http
 {
     internal class SerialComArduino
     {
-        public event SerialComArduinoEventHandler<SerialComArduinoEventArgs> DataChangedEvent;
+        public event SerialComArduinoCmdEventHandler<SerialComArduinoCmdEventArgs> CmdReceivedEvent;
+        public event SerialComArduinoDataEventHandler<SerialComArduinoDataEventArgs> DataChangedEvent;
+
         public string ComPort { get; private set; }
+        public bool IsConnected
+        {
+            get { return SerialPort.IsOpen; }
+        }
 
 
         private SerialPort SerialPort = new SerialPort();
@@ -18,6 +24,7 @@ namespace Sensor_basics_serial_to_http
 
         private string Angle { get; set; }
         private string Distance { get; set; }
+        private string Direction { get; set; }
 
 
         public SerialComArduino()
@@ -74,6 +81,29 @@ namespace Sensor_basics_serial_to_http
 
         }
 
+        public void SerialPortWriteCmd(enSerialComArduinoCmdTx cmd)
+        {
+            String cmdString = String.Empty;
+            switch(cmd)
+            {
+                case enSerialComArduinoCmdTx.start:
+                    cmdString = "start";
+                    break;
+                    case enSerialComArduinoCmdTx.stop:
+                    cmdString = "stop";
+                    break;
+                    case enSerialComArduinoCmdTx.getready:
+                    cmdString = "get ready";
+                    break;
+                case enSerialComArduinoCmdTx.scanperim:
+                    cmdString = "start perimeter scan";
+                    break;
+                default:
+                    throw new Exception("Serial Tx communication command does not exist");
+            }
+            SerialPort.WriteLine(cmdString);
+        }
+
         // thread read data from serial port
         private void SerialPortReadData()
         {
@@ -83,25 +113,62 @@ namespace Sensor_basics_serial_to_http
                 {
                     string data = SerialPort.ReadLine();
                     /*Console.WriteLine("Data received: " + data);*/
-                    ParseSerialData(data);
+                    ParseSerialInput(data);
                 }
             } // never leave thread
         }
 
+        private void ParseSerialInput(string data)
+        {
+            data = data.Trim();
+
+            string[] substrings = data.Split(':');
+
+            if (substrings[0] == "cmd")     // command received
+            {
+                ParseSerialCmd(substrings[1]);
+            } else if(substrings[0] == "data")      // measurement data received
+            {
+                ParseSerialData(substrings[1]);
+            }
+            else
+            {
+                Console.WriteLine($"Message received from microcontroller: {substrings[0]}\n");
+            }
+        }
+
+        private void ParseSerialCmd(string cmdString)
+        {
+            enSerialComArduinoCmdRx cmd = enSerialComArduinoCmdRx.n_a;
+            if(cmdString == "ready")
+            {
+                cmd = enSerialComArduinoCmdRx.ready;
+            } else if (cmdString == "perimeter scan done")
+            {
+                cmd = enSerialComArduinoCmdRx.perimio;
+            } else
+            {
+                return;
+            }
+
+            OnCmdReceivedEvent(cmd);
+        }
+
         private void ParseSerialData(string data)
         {
-            // format string: "180;0.5" (angle;distance)
+            // format string: "180;0.5;CLOCKWISE" (angle;distance;direction)
             string[] substrings = data.Split(';');
 
             string angle = substrings[0];
             string distance = substrings[1];
+            string direction = substrings[2];
 
             // check angle
             if(!int.TryParse(angle, out int a))
             {
                 return;
             }
-            else if (a < 0 || a > 360)
+            else if (a < 0 || a >= 360)
             {
                 return;
             }
@@ -116,21 +183,50 @@ namespace Sensor_basics_serial_to_http
                 return;
             }
 
-            // check wheter the values changed and fire event if so
-            if (Angle != angle || Distance != distance)
+            // check direction
+            if(direction != "CLOCKWISE" && direction != "COUNTERCLOCKWISE")
+            {
+                return;
+            }
+
+            // check whether the values changed and fire event if so
+            if (Angle != angle || Distance != distance || Direction != direction)
             {
                 Angle = angle;
                 Distance = distance;
+                Direction = direction;
                 OnDataChangedEvent();
             }
         }
 
-        // data changed event
+        // events
+        private void OnCmdReceivedEvent(enSerialComArduinoCmdRx cmd)
+        {
+            CmdReceivedEvent?.Invoke(this, new SerialComArduinoCmdEventArgs(cmd));
+        }
         private void OnDataChangedEvent()
         {
-            DataChangedEvent?.Invoke(this, new SerialComArduinoEventArgs(Angle, Distance));
+            DataChangedEvent?.Invoke(this, new SerialComArduinoDataEventArgs(Angle, Distance, Direction));
         }
     }
 
-    public delegate void SerialComArduinoEventHandler<SerialComArduinoEventArgs>(object sender, SerialComArduinoEventArgs e);
+    enum enSerialComArduinoCmdRx
+    {
+        n_a,
+        ready,
+        perimio
+    }
+
+    enum enSerialComArduinoCmdTx
+    {
+        n_a,
+        start,
+        stop,
+        getready,
+        scanperim
+    }
+
+
+    public delegate void SerialComArduinoDataEventHandler<SerialComArduinoDataEventArgs>(object sender, SerialComArduinoDataEventArgs e);
+    public delegate void SerialComArduinoCmdEventHandler<SerialComArduinoCmdEventArgs>(object sender, SerialComArduinoCmdEventArgs e);
 }

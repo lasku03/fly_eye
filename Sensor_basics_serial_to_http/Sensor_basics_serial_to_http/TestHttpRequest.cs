@@ -21,7 +21,8 @@ namespace Sensor_basics_serial_to_http
                 Console.Write("Enter value for distance: ");
                 string distance = Console.ReadLine();
 
-                HttpSend.SendData("localhost", angle, distance);
+
+                HttpSend.SendData("localhost", angle, distance, "CLOCKWISE");
                 Console.WriteLine($"\n HTTP request: http://localhost:8080/detections/{angle}/{distance}\n\n");
             }
         }
@@ -40,7 +41,7 @@ namespace Sensor_basics_serial_to_http
 
         private static void CmdReceiveEventHandler(object sender, HttpReceiveCmdEventArgs e)
         {
-            string command = e.Command;
+            enHttpReceiveCmd command = e.Command;
 
             Console.WriteLine($"Received command over HTTP-request: {command}");
         }

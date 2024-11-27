@@ -10,16 +10,25 @@ namespace Sensor_basics_serial_to_http
     {
         public TestSerialPortArduino(SerialComArduino serialComArduino)
         {
-            // register data changed event
+            // register events
+            serialComArduino.CmdReceivedEvent += CmdReceivedEventHandler;
             serialComArduino.DataChangedEvent += DataChangedEventHandler;
         }
 
-        private void DataChangedEventHandler(object sender, SerialComArduinoEventArgs e)
+        private void CmdReceivedEventHandler(object sender, SerialComArduinoCmdEventArgs e)
+        {
+            enSerialComArduinoCmdRx cmd = e.Cmd;
+
+            Console.WriteLine($"cmd: {cmd}");
+        }
+
+        private void DataChangedEventHandler(object sender, SerialComArduinoDataEventArgs e)
         {
             string angle = e.Angle;
             string distance = e.Distance;
+            string direction = e.Direction;
 
-            Console.WriteLine($"angle: {angle} ; distance: {distance}");
+            Console.WriteLine($"angle: {angle} ; distance: {distance} ; direction: {direction}");
         }
     }
 }
