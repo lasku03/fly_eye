@@ -29,7 +29,7 @@ void sercom_WriteCmd(enSerTxCmd cmd) {
       Serial.println("ready");
       break;
     case PERIMIO:
-      Serial.println("perimio");
+      Serial.println("perimeter scan done");
       break;
     default:
       break;
@@ -43,9 +43,9 @@ enSerRxCmd sercom_StringToCmd(String input) {
     return START;
   } else if (input == "stop") {
     return STOP;
-  } else if (input == "getready") {
+  } else if (input == "get ready") {
     return GETREADY;
-  } else if (input == "perimscan") {
+  } else if (input == "start perimeter scan") {
     return SCANPERIM;
   } else {
     return;

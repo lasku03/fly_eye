@@ -25,13 +25,13 @@
 enum enSerRxCmd {
   START,    // Serial cmd: start\l\n
   STOP,     // Serial cmd: stop\l\n
-  GETREADY, // Serial cmd: init\l\n
-  SCANPERIM // Serial cmd: scanperim\l\n
+  GETREADY, // Serial cmd: get ready\l\n
+  SCANPERIM // Serial cmd: start perimeter scan\l\n
 };
 
 enum enSerTxCmd {
   READY,    // Serial cmd: ready\l\n
-  PERIMIO   // Serial cmd: perimio\l\n
+  PERIMIO   // Serial cmd: perimeter scan done\l\n
 };
 
 // ---------
