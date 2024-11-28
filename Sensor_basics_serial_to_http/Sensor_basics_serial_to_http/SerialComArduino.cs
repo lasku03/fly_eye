@@ -19,7 +19,7 @@ namespace Sensor_basics_serial_to_http
         private SerialPort SerialPort = new SerialPort();
         private int baudRate = 115200;
 
-        private int distanceMax = 10000;
+        private int distanceMax = 1000;
 
 
         private string Angle { get; set; }
@@ -87,16 +87,16 @@ namespace Sensor_basics_serial_to_http
             switch(cmd)
             {
                 case enSerialComArduinoCmdTx.start:
-                    cmdString = "start";
+                    cmdString = "start\r";
                     break;
                     case enSerialComArduinoCmdTx.stop:
-                    cmdString = "stop";
+                    cmdString = "stop\r";
                     break;
                     case enSerialComArduinoCmdTx.getready:
-                    cmdString = "get ready";
+                    cmdString = "get ready\r";
                     break;
                 case enSerialComArduinoCmdTx.scanperim:
-                    cmdString = "start perimeter scan";
+                    cmdString = "start perimeter scan\r";
                     break;
                 default:
                     throw new Exception("Serial Tx communication command does not exist");
@@ -180,7 +180,7 @@ namespace Sensor_basics_serial_to_http
             }
             else if (d < 0 || d > distanceMax)
             {
-                return;
+                d = distanceMax;
             }
 
             // check direction

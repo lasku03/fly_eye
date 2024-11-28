@@ -81,12 +81,13 @@ namespace Sensor_basics_serial_to_http
                 {
                     case enState.INIT:
                         sendHttpMode = enSendHttpMode.NO;
+                        Console.WriteLine("Enter \'s\' if Arduino is restarted");
                         state = enState.CONNECT;
                         break;
                     case enState.WAIT:
                         break;
                     case enState.CONNECT:
-                        if (serialComArduino.IsConnected)
+                        if (serialComArduino.IsConnected && Console.ReadKey().Key == ConsoleKey.S)
                         {
                             state = enState.GETREADY;
                         }
