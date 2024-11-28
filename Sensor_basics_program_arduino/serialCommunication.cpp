@@ -39,6 +39,8 @@ void sercom_WriteCmd(enSerTxCmd cmd) {
 }
 
 enSerRxCmd sercom_StringToCmd(String input) {
+  Serial.print("cmd received:");
+  Serial.println(input);
   if (input == "start") {
     return START;
   } else if (input == "stop") {

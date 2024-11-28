@@ -13,6 +13,9 @@ void setup() {
 
   Serial.println("------Initialization done-------");
 
+  Serial.flush();
+  
+
   // Serial.println("Enter 'start' or 'stop'");
 }
 
