@@ -8,9 +8,11 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import fi.savonia.fly.controllers.RadarState;
 import fi.savonia.fly.domain.detection.model.Detection;
+import fi.savonia.fly.domain.perimeter.model.Perimeter;
 import fi.savonia.fly.domain.point.model.Point;
 import fi.savonia.fly.repositories.DetectionRepository;
 
@@ -28,7 +30,9 @@ public class DetectionService {
         LocalDateTime now = LocalDateTime.now();
         Date date = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
         detection.setDate(date);
-        detection.setPerimeter(perimeterService.findPerimeterByPerimeterId(RadarState.getCurrentPerimeter().getPerimeterID()));
+        
+        Perimeter perimeter = perimeterService.findPerimeterByPerimeterId(RadarState.getCurrentPerimeter().getPerimeterID());
+        detection.setPerimeter(perimeter);
 
         // Persistir el objeto Perimeter en la base de datos
         return detectionRepository.save(detection);
@@ -39,32 +43,33 @@ public class DetectionService {
 
         Detection detection = Detection.builder()
                 .points(points)
+                .direction(RadarState.getDirection())
                 .build();
         Detection newDetection = saveDetection(detection);
         RadarState.setCurrentDetection(newDetection);
     }
 
-    public void addOrReplace(Detection detection, Point newPoint) {
+    public void addIfNotExist(Detection detection, Point newPoint) {
         Point point = detection.getAnglePoint(newPoint.getAngle());
-        if (point != null) {
-            point = newPoint;
-        }
-        else {
+        if (point == null)  {
             detection.getPoints().add(newPoint);
         }
     }
 
-    public void addPointToCurrentDetection(List<Point> points) {
-        Point point = points.get(points.size() - 1);
-        if (point.getAngle() == 0 || RadarState.getCurrentDetection() == null) {
-            createDetection();
-        }
-
+    public void addPointsToCurrentDetection(List<Point> points) {
         Detection currentDetection = RadarState.getCurrentDetection();
         for (Point listPoint : points) {
-            addOrReplace(currentDetection, listPoint);
+            addIfNotExist(currentDetection, listPoint);
         }
         
+        // Save the updated detection
+        RadarState.setCurrentDetection(detectionRepository.save(currentDetection));
+    }
+
+    public void addPointToCurrentDetection(Point point) {
+        Detection currentDetection = RadarState.getCurrentDetection();
+        
+        addIfNotExist(currentDetection, point);
         // Save the updated detection
         RadarState.setCurrentDetection(detectionRepository.save(currentDetection));
     }

@@ -90,6 +90,7 @@ function addDetectionToList(id, date) {
 
 function addDetectionListener(detectionItem) {
     detectionItem.addEventListener("click", () => {
+        endAnimation();
         chooseDetectionItem(detectionItem, "detectionItem_chosen");
         let id = detectionItem.id.slice(1);
         drawDetectionPoints(id);
@@ -154,23 +155,41 @@ async function drawAnimation(detectionItems, start) {
     while (i < detectionMap.length && !end) {
         let j = 0;
         chooseDetectionItem(detectionItems[i], "animating");
-        while (j < pointsMap.length && !end) {
-            if (j < detectionMap[i].points.length) {
-                pointsMap[j] = detectionMap[i].points[j].distance;
+        angleIndex = 0;
+        if (detectionMap[i].direction == "COUNTERCLOCKWISE") {
+            while (j < pointsMap.length && !end) {
+                pointsMap[j] = findAngleDistance(detectionMap[i].points, j);
+                addAngle(j);
+                paintPoints();
+                j++;
+                await sleep(10);
             }
-            else {
-                pointsMap[j] = 0;
-            }
-            addAngle(j);
-            paintPoints();
-            j++;
-            await sleep(10);
         }
+        else {
+            while (j < pointsMap.length && !end) {
+                let inverseAngle = 359 - j;
+                pointsMap[inverseAngle] = findAngleDistance(detectionMap[i].points, inverseAngle);
+                addAngle(inverseAngle);
+                paintPoints();
+                j++;
+                await sleep(10);
+            }
+        }        
         i++;
     }
     if (!end) {
         drawAnimation(detectionItems, 0);
     }
+}
+
+function findAngleDistance(points, angle) {
+    for (let point of points) {
+        if (point.angle == angle) {
+            return point.distance;
+        }
+    }
+
+    return 0;
 }
 
 function sleep(ms) {

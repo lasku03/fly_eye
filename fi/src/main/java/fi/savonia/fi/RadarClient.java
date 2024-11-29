@@ -20,28 +20,58 @@ public class RadarClient {
 
     public static void main(String[] args) {
         SpringApplication.run(RadarClient.class, args);
+        simulateInverseRadarDetection();
         simulateRadarDetection();
     }
 
     private static void simulateRadarDetection() {
-        for (int angle = 0; angle < 360; angle++) {
+        for (int angle = 0; angle <= 360; angle += 10) {
             int randomNumber = random.nextInt(10) + 1; // Número aleatorio entre 1 y 10
             double distance;
 
-            if (randomNumber == 10) {
-                distance = 0.05 + (0.99 - 0.05) * random.nextDouble(); // Distancia aleatoria entre 0.01 y 0.99
+            if (angle == 360) angle = 359; 
+            if (randomNumber <= 10) {
+                distance = 0.2 + (0.99 - 0.2) * random.nextDouble(); // Distancia aleatoria entre 0.2 y 0.99
                 distance = Math.round(distance * 100.0) / 100.0;
             } else {
                 distance = 0; // No se detectó nada
             }
 
-            ResponseEntity<String> response = addDetectionPoint(angle, distance);
+            ResponseEntity<String> response = addDetectionPointClockwise(angle, distance);
             System.out.println("Angle: " + angle + ", Random Number: " + randomNumber + ", Distance: " + distance + ", Response: " + response.getBody());
         }
     }
 
-    private static ResponseEntity<String> addDetectionPoint(int angle, double distance) {
-        String url = BASE_URL + "/" + angle + "/" + distance;
+    private static void simulateInverseRadarDetection() {
+        for (int angle = 360; angle >= 0; angle -= 10) {
+            int randomNumber = random.nextInt(10) + 1; // Número aleatorio entre 1 y 10
+            double distance;
+
+            if (angle == 360) angle = 0;
+            else if (angle == 0) angle = 1;
+            if (randomNumber <= 10) {
+                distance = 0.2 + (0.99 - 0.2) * random.nextDouble(); // Distancia aleatoria entre 0.2 y 0.99
+                distance = Math.round(distance * 100.0) / 100.0;
+            } else {
+                distance = 0; // No se detectó nada
+            }
+
+            ResponseEntity<String> response = addDetectionPointCounterclockwise(angle, distance);
+            System.out.println("Angle: " + angle + ", Random Number: " + randomNumber + ", Distance: " + distance + ", Response: " + response.getBody());
+            if (angle == 0) angle = 360;
+        }
+    }
+
+    private static ResponseEntity<String> addDetectionPointClockwise(int angle, double distance) {
+        String url = BASE_URL + "/" + angle + "/" + distance + "/CLOCKWISE";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        return restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+    }
+
+    private static ResponseEntity<String> addDetectionPointCounterclockwise(int angle, double distance) {
+        String url = BASE_URL + "/" + angle + "/" + distance + "/COUNTERCLOCKWISE";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Void> request = new HttpEntity<>(headers);
