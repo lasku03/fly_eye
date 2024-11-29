@@ -4,6 +4,7 @@
 #include "motor.h"
 
 void setup() {
+  // Serial connection
   Serial.begin(115200);  
 
   // Initializations

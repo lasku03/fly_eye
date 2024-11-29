@@ -59,6 +59,7 @@ void mot_DoWork() {
     case MOT_WAIT:
       motdriv_Stop();
       // Wait a moment (500ms)
+      delay(500);
       timeActual = millis();
       if (timeActual - timePrev >= 500) {
         state = MOT_RUN;

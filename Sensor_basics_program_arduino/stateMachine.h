@@ -17,6 +17,12 @@
 // ---------
 
 /**
+ * @brief Sends zero flag to stateMachine.
+ *
+ */
+void sm_SetZeroPositionFlag();
+
+/**
  * @brief Execution of state machine functionality to run in a hyperloop.
  *
  */

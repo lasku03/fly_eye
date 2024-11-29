@@ -17,7 +17,14 @@ enum enState {
   SM_STOP
 };
 
+static bool zeroPositionFlag = false;
+static bool perimScanJustDone = false;
+
 static enState state = SM_INIT;
+
+void sm_SetZeroPositionFlag() {
+  zeroPositionFlag = true;
+}
 
 void sm_DoMeasurement() {
   mot_Run();
@@ -35,17 +42,17 @@ void sm_DoWork() {
       Serial.println("Wait for 'get ready'");
       sercom_WaitForCmd(GETREADY);
       Serial.println("Drive to zero position...");
+      motpos_ChangeDirectionManually(CLOCK_WISE);
       mot_Run();
       state = SM_ZERO;
       break;
     case SM_ZERO:  // Drive to the zero position slowly
-      if (digitalRead(POSITION_REF_PIN)) {
+      if (zeroPositionFlag) {
         mot_Stop();
         state = SM_READY;
       }
       break;
     case SM_READY:  // Send 'ready' over serial communication
-      motpos_ChangeDirectionManually(CLOCK_WISE);
       sercom_WriteCmd(READY);
       state = SM_WAIT;
       Serial.println("Wait for command ('start' or 'start perimeter scan')");
@@ -62,6 +69,7 @@ void sm_DoWork() {
       }
       break;
     case SM_PERIM1:  // Do perimeter scan until the middle
+      motpos_ChangeDirectionManually(COUNTER_CLOCK_WISE);
       sm_DoMeasurement();
       actualPos = motpos_GetActual();
       if (actualPos >= 150 && actualPos <= 210) {
@@ -71,7 +79,7 @@ void sm_DoWork() {
       break;
     case SM_PERIM2:  // Do perimeter scan until the end
       sm_DoMeasurement();
-      if (digitalRead(POSITION_REF_PIN)) {
+      if (zeroPositionFlag) {
         mot_Stop();
         state = SM_PERIMIO;
         Serial.println("Perimeter scan done");
@@ -79,10 +87,19 @@ void sm_DoWork() {
       break;
     case SM_PERIMIO:  // Perimeter scan done
       sercom_WriteCmd(PERIMIO);
+      perimScanJustDone = true;
       state = SM_WAIT;
       Serial.println("Wait for command ('start' or 'start perimeter scan')");
       break;
     case SM_RUN:  // Do the measurement
+      if(perimScanJustDone) {
+        motpos_ChangeDirectionManually(CLOCK_WISE);
+        perimScanJustDone = false;
+      }
+      else {
+        motpos_ChangeDirectionManually(COUNTER_CLOCK_WISE);
+      }
+      
       sm_DoMeasurement();
       static int i;
       if (++i >= 10) {  // Check command only every 10 times, because the function as a big latency.
@@ -101,4 +118,14 @@ void sm_DoWork() {
       break;
   }
   // Serial.println(state);
+
+  // Reset zero position flag
+  zeroPositionFlag = false;
+
+  if(state == SM_RUN) {
+    motpos_ChangeDirectionAutomaticallyEnable(true);
+  }
+  else {
+    motpos_ChangeDirectionAutomaticallyEnable(false);
+  }
 }
