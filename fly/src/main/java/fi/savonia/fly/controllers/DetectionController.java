@@ -2,6 +2,8 @@ package fi.savonia.fly.controllers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,20 +31,32 @@ public class DetectionController {
     @Autowired
     private DetectionService detectionService;
 
+    private final BlockingQueue<List<Point>> pointsQueue = new ArrayBlockingQueue<>(1000);
+    private Thread processingThread;
+
+    public DetectionController() {
+        startThread();
+    }
+
+    public void startThread() {
+        processingThread = new Thread(this::processPoints);
+        processingThread.start();
+    }
+
     @PostMapping("/{angle}/{distance}/{direction}")
     public ResponseEntity<String> addDetectionPoint(@PathVariable int angle, @PathVariable double distance,
-            @PathVariable String direction) {
+            @PathVariable String direction) throws InterruptedException {
         if (RadarState.getCurrentPerimeter() != null) {
             distance = distance >= RadarState.getScale() ? 0 : distance / RadarState.getScale();
             distance = Math.round(distance * 100.0) / 100.0;
             RadarState.setDirection(direction);
             List<Point> pointsToAdd = new ArrayList<>();
+            if (((angle == 0) && (direction.equals("COUNTERCLOCKWISE"))) || 
+                    (angle == 359) && (direction.equals("CLOCKWISE")) ||
+                    RadarState.getCurrentDetection() == null) {
+                detectionService.createDetection();
+            }
             if (angle != RadarState.getLastDetectionAngle()) {
-                if (((angle == 0) && (direction.equals("COUNTERCLOCKWISE"))) || 
-                        (angle == 359) && (direction.equals("CLOCKWISE")) ||
-                        RadarState.getCurrentDetection() == null) {
-                    detectionService.createDetection();
-                }
                 int angleDifference = Math.abs(angle - RadarState.getLastDetectionAngle());
                 if (angleDifference > 1) {
                     double lastDistance = 0;
@@ -76,6 +90,7 @@ public class DetectionController {
                                     .distance(isInsideThePerimeter(i, lastDistance) ? lastDistance : 0)
                                     .build();
                             addPointToCurrentDetection(midPoint);
+                            pointsToAdd.add(midPoint);
                         }
                     }
                 }
@@ -87,11 +102,12 @@ public class DetectionController {
 
                 addPointToCurrentDetection(point);
                 pointsToAdd.add(point);
+                pointsQueue.put(pointsToAdd);
                 
-                new Thread(() -> {
+                //detectionService.addPointsToCurrentDetection(pointsToAdd);
+                /*new Thread(() -> {
                     detectionService.addPointsToCurrentDetection(pointsToAdd);
-                }).start();
-                
+                }).start();*/
 
                 RadarState.setLastDetectionAngle(angle);
                 RadarState.setLastDetectionDistance(distance);
@@ -136,5 +152,19 @@ public class DetectionController {
     public void addPointToCurrentDetection(Point point) {
         RadarPoint radarPoint = new RadarPoint(point);
         messagingTemplate.convertAndSend("/topic/points", radarPoint);
+    }
+
+    private void processPoints() {
+        try {
+            while (true) {
+                List<Point> points = pointsQueue.take();
+                for (Point point : points) {
+                    detectionService.addPointToCurrentDetection(point);
+                }
+                Thread.sleep(50);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Interrumpe el hilo si ocurre un error
+        }
     }
 }

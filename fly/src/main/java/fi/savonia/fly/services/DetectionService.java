@@ -65,4 +65,12 @@ public class DetectionService {
         // Save the updated detection
         RadarState.setCurrentDetection(detectionRepository.save(currentDetection));
     }
+
+    public void addPointToCurrentDetection(Point point) {
+        Detection currentDetection = RadarState.getCurrentDetection();
+        
+        addIfNotExist(currentDetection, point);
+        // Save the updated detection
+        RadarState.setCurrentDetection(detectionRepository.save(currentDetection));
+    }
 }
