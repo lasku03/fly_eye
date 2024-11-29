@@ -34,7 +34,7 @@ public class RadarClientApplication {
             System.out.println("Perimeter created: " + startResponse.getBody());
 
             // Generar y enviar distancias aleatorias para cada ángulo
-            for (int angle = 0; angle < 360; angle++) {
+            for (int angle = 0; angle < 360; angle += 10) {
                 double randomDistance = generateRandomDistance();
                 ResponseEntity<String> pointResponse = addPerimeterPoint(angle, randomDistance);
                 if (pointResponse.getStatusCode().is2xxSuccessful()) {

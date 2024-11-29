@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import fi.savonia.fly.controllers.RadarState;
 import fi.savonia.fly.domain.detection.model.Detection;
+import fi.savonia.fly.domain.perimeter.model.Perimeter;
 import fi.savonia.fly.domain.point.model.Point;
 import fi.savonia.fly.repositories.DetectionRepository;
 
@@ -44,17 +45,14 @@ public class DetectionService {
         RadarState.setCurrentDetection(newDetection);
     }
 
-    public void addOrReplace(Detection detection, Point newPoint) {
+    public void addIfNotExist(Detection detection, Point newPoint) {
         Point point = detection.getAnglePoint(newPoint.getAngle());
-        if (point != null) {
-            point = newPoint;
-        }
-        else {
+        if (point == null)  {
             detection.getPoints().add(newPoint);
         }
     }
 
-    public void addPointToCurrentDetection(List<Point> points) {
+    public void addPointsToCurrentDetection(List<Point> points) {
         Point point = points.get(points.size() - 1);
         if (point.getAngle() == 0 || RadarState.getCurrentDetection() == null) {
             createDetection();
@@ -62,7 +60,7 @@ public class DetectionService {
 
         Detection currentDetection = RadarState.getCurrentDetection();
         for (Point listPoint : points) {
-            addOrReplace(currentDetection, listPoint);
+            addIfNotExist(currentDetection, listPoint);
         }
         
         // Save the updated detection

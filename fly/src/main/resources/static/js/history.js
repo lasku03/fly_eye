@@ -90,6 +90,7 @@ function addDetectionToList(id, date) {
 
 function addDetectionListener(detectionItem) {
     detectionItem.addEventListener("click", () => {
+        endAnimation();
         chooseDetectionItem(detectionItem, "detectionItem_chosen");
         let id = detectionItem.id.slice(1);
         drawDetectionPoints(id);

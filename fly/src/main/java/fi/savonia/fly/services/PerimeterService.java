@@ -74,28 +74,30 @@ public class PerimeterService {
         savePerimeter(perimeter);
     }
 
-    public void addOrReplace(Perimeter perimeter, Point newPoint) {
+    public void addIfNotExist(Perimeter perimeter, Point newPoint) {
         Point point = perimeter.getAnglePoint(newPoint.getAngle());
-        if (point != null) {
-            point = newPoint;
-        }
-        else {
+        if (point == null) {
             perimeter.getPoints().add(newPoint);
         }
     }
 
-    public void addPointToCurrentPerimeter(List<Point> points) {
+    public void addPointsToCurrentPerimeter(List<Point> points) {
         // Obtain all perimeters
         Perimeter currentPerimeter = RadarState.getCurrentPerimeter();
 
         if (currentPerimeter.getPoints() == null) {
             currentPerimeter.setPoints(new ArrayList<>());
         }
+        
         for (Point point : points) {
-            addOrReplace(currentPerimeter, point);
+            addIfNotExist(currentPerimeter, point);
         }
         
         // Save the updated detection
         RadarState.setCurrentPerimeter(perimeterRepository.save(currentPerimeter));
+    }
+
+    public void deletePerimeter(int id) {
+        perimeterRepository.deleteById(id);
     }
 }

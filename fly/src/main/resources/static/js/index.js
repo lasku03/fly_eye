@@ -1,13 +1,58 @@
-// Show perimeters list
-/*document.getElementById('selectPerimeterBtn').addEventListener('click', function () {
-    let chosenPerimeterItem = document.querySelector('.perimeterItem_chosen');
-    
-    // Verify if the element was found
-    if (chosenPerimeterItem) {
-        let id = chosenPerimeterItem.id.slice(1);
-        getAndDrawPerimeterPoints(id);
+let scanButton = document.getElementById('scanPerimeterBtn');
+let deleteButton = document.getElementById('deletePerimeterBtn');
+
+scanButton.addEventListener("click", () => {
+    // Show a dialog to introduce the name
+    const perimeterName = prompt("Introduce the new perimeter name:");
+
+    // If the user clicked "Acept" and didn't leave the name in blank
+    if (perimeterName && perimeterName.trim() !== "") {
+        if (perimeterName && perimeterName.trim() !== "") {
+            fetch(`/perimeters/start/${perimeterName}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(result => {
+                    console.log("Perimeter scan started:", result);
+                })
+                .catch(error => {
+                    console.error("Error starting perimeter scan:", error);
+                    alert("Failed to start perimeter scan: " + error.message);
+                });
+        } else {
+            alert("Please provide a valid name for the perimeter.");
+        }
     }
-});*/
+});
+
+deleteButton.addEventListener("click", () => {
+    let selectedPerimeter = document.querySelector(".perimeterItem_chosen");
+
+    if (selectedPerimeter != null) {
+        let id = selectedPerimeter.id.slice(1);
+
+        fetch(`/perimeters/delete/${id}`, {
+                method: 'DELETE',  // Usamos el método DELETE
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+                selectedPerimeter.remove();
+                console.log(response.text());
+                return response.text();
+            })
+            .catch(error => {
+                console.error("Error deleting perimeter");
+            });
+    }
+});
 
 // WEB SOCKET
 function connectWebSocket() {
@@ -79,7 +124,7 @@ function addPerimeterToList(id, name, date) {
 function addListeners() {
     let perimeterItems = document.querySelectorAll(".perimeterItem");
 
-    for (let i = 0; i < perimeterItems.length; i++) {        
+    for (let i = 0; i < perimeterItems.length; i++) {
         perimeterItems[i].addEventListener("click", () => {
             choosePerimeterItem(i);
             let id = perimeterItems[i].id.slice(1);

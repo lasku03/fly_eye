@@ -5,7 +5,7 @@ let radarRadius = canvas.width / 2;
 
 let pointsMap = new Array(360).fill(null);
 let perimeterMap = [];
-let centerPoint = {x: canvas.width / 2, y: canvas.height / 2};
+let centerPoint = { x: canvas.width / 2, y: canvas.height / 2 };
 let radarAngles = [];
 
 function addAngle(newAngle) {
@@ -60,7 +60,7 @@ function drawLines() {
         let borderAnglePoint = polarToCartesian(radarAngles[j], 1)
         let opacity = 0.02 * (50 - i);
         let color = "rgba(43, 240, 75, " + opacity + ")";
-        drawLine(color, centerPoint, borderAnglePoint); 
+        drawLine(color, centerPoint, borderAnglePoint);
     }
 }
 
