@@ -81,13 +81,13 @@ namespace Sensor_basics_serial_to_http
                 {
                     case enState.INIT:
                         sendHttpMode = enSendHttpMode.NO;
-                        Console.WriteLine("Enter \'s\' if Arduino is restarted");
+                        Console.WriteLine("\nWait until microcontroller is connected and initialized...");
                         state = enState.CONNECT;
                         break;
                     case enState.WAIT:
                         break;
                     case enState.CONNECT:
-                        if (serialComArduino.IsConnected && Console.ReadKey().Key == ConsoleKey.S)
+                        if (serialComArduino.IsConnected)
                         {
                             state = enState.GETREADY;
                         }
@@ -95,21 +95,21 @@ namespace Sensor_basics_serial_to_http
                     case enState.GETREADY:
                         stateBeforeWait = enState.GETREADY;
                         serialComArduino.SerialPortWriteCmd(enSerialComArduinoCmdTx.getready);
-                        Console.WriteLine("Wait until hardware is ready...");
+                        Console.WriteLine("\nWait until hardware is ready...");
                         state = enState.WAIT;
                         break;
                     case enState.READY:
                         sendHttpMode = enSendHttpMode.NO;
                         stateBeforeWait = enState.READY;
                         HttpSend.SendCmd(host, "ready");
-                        Console.WriteLine("Wait until a start command (\'start/perimeters' or 'start/dedections\') over HTTP is received...");
+                        Console.WriteLine("\nWait until a start command (\'start/perimeters' or 'start/dedections\') over HTTP is received...");
                         state = enState.WAIT;
                         break;
                     case enState.STARTPERIM:
                         sendHttpMode = enSendHttpMode.NO;
                         serialComArduino.SerialPortWriteCmd(enSerialComArduinoCmdTx.scanperim);
                         Console.WriteLine("Perimeter scan started");
-                        Console.WriteLine("Wait until angle value is zero...");
+                        Console.WriteLine("\nWait until angle value is zero...");
                         state = enState.WAITPERIM;
                         break;
                     case enState.WAITPERIM:
@@ -121,29 +121,29 @@ namespace Sensor_basics_serial_to_http
                     case enState.PERIM:
                         sendHttpMode = enSendHttpMode.PERIMETER;
                         stateBeforeWait = enState.PERIM;
-                        Console.WriteLine("Wait until perimter scan is done...");
+                        Console.WriteLine("\nWait until perimter scan is done...");
                         state = enState.WAIT;
                         break;
                     case enState.PERIMSCANDONE:
                         Console.WriteLine("Perimeter scan done");
                         sendHttpMode |= enSendHttpMode.NO;
                         stateBeforeWait = enState.PERIMSCANDONE;
-                        Console.WriteLine("Wait until a start command (\'start/perimeters' or 'start/dedections\') over HTTP is received...");
+                        Console.WriteLine("\nWait until a start command (\'start/perimeters' or 'start/dedections\') over HTTP is received...");
                         state = enState.WAIT;
                         break;
                     case enState.RUN:
-                        Console.WriteLine("Measurement started. Wait until command \'stop\' over HTTP is received...");
+                        Console.WriteLine("\nMeasurement started. Wait until command \'stop\' over HTTP is received...");
                         sendHttpMode = enSendHttpMode.MEASUREMENT;
                         stateBeforeWait = enState.RUN;
                         serialComArduino.SerialPortWriteCmd(enSerialComArduinoCmdTx.start);
                         state = enState.WAIT;
                         break;
                     case enState.STOP:
-                        Console.WriteLine("Measurement stopped");
+                        Console.WriteLine("\nMeasurement stopped");
                         sendHttpMode = enSendHttpMode.NO;
                         stateBeforeWait = enState.STOP;
                         serialComArduino.SerialPortWriteCmd(enSerialComArduinoCmdTx.stop);
-                        Console.WriteLine("Wait until a start command (\'start/perimeters' or 'start/dedections\') over HTTP is received...");
+                        Console.WriteLine("\nWait until a start command (\'start/perimeters' or 'start/dedections\') over HTTP is received...");
                         state = enState.WAIT;
                         break;
                     default:
@@ -248,10 +248,16 @@ namespace Sensor_basics_serial_to_http
 
         private void DataChangedEventHandler(object sender, SerialComArduinoDataEventArgs e)
         {
+            
             string angle = e.Angle;
             string distance = e.Distance;
             string direction = e.Direction;
 
+            if (Angle == angle && sendHttpMode != enSendHttpMode.NO)
+            {
+                return;
+            }
+                
             Angle = e.Angle;
 
             switch (sendHttpMode)
