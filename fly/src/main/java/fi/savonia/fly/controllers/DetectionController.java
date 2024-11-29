@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,16 +34,25 @@ public class DetectionController {
             @PathVariable String direction) {
         if (RadarState.getCurrentPerimeter() != null) {
             distance = distance >= RadarState.getScale() ? 0 : distance / RadarState.getScale();
+            distance = Math.round(distance * 100.0) / 100.0;
             RadarState.setDirection(direction);
             List<Point> pointsToAdd = new ArrayList<>();
             if (angle != RadarState.getLastDetectionAngle()) {
-                int thisAngle = angle;
-                if (direction.equals("CLOCKWISE") && angle == 0) thisAngle = 360;
-                int angleDifference = Math.abs(thisAngle - RadarState.getLastDetectionAngle());
-                if (angleDifference > 1 && angleDifference <= RadarState.getMaximumAngleDistance()) {
-                    double lastDistance = RadarState.getLastDetectionDistance() == 0 ? 1 : RadarState.getLastDetectionDistance();
-                    double thisDistance = distance == 0 ? 1 : distance;
-                    double distanceToAdd = (thisDistance - lastDistance) / angleDifference;
+                if (((angle == 0) && (direction.equals("COUNTERCLOCKWISE"))) || 
+                        (angle == 359) && (direction.equals("CLOCKWISE")) ||
+                        RadarState.getCurrentDetection() == null) {
+                    detectionService.createDetection();
+                }
+                int angleDifference = Math.abs(angle - RadarState.getLastDetectionAngle());
+                if (angleDifference > 1) {
+                    double lastDistance = 0;
+                    double distanceToAdd = 0;
+                    if (angleDifference <= RadarState.getMaximumAngleDistance()) {
+                        lastDistance = RadarState.getLastDetectionDistance() == 0 ? 1
+                                : RadarState.getLastDetectionDistance();
+                        double thisDistance = distance == 0 ? 1 : distance;
+                        distanceToAdd = (thisDistance - lastDistance) / angleDifference;
+                    }
 
                     if (direction.equals("COUNTERCLOCKWISE")) {
                         for (int i = RadarState.getLastDetectionAngle() + 1; i < angle; i++) {
@@ -55,9 +65,9 @@ public class DetectionController {
                             addPointToCurrentDetection(midPoint);
                             pointsToAdd.add(midPoint);
                         }
-                    }
-                    else {
-                        int lastDetectionAngle = RadarState.getLastDetectionAngle() == 0 ? 360 : RadarState.getLastDetectionAngle();
+                    } else {
+                        int lastDetectionAngle = RadarState.getLastDetectionAngle() == 0 ? 360
+                                : RadarState.getLastDetectionAngle();
                         for (int i = lastDetectionAngle - 1; i > angle; i--) {
                             lastDistance += distanceToAdd;
                             lastDistance = lastDistance == 1 ? 0 : lastDistance;
@@ -77,18 +87,17 @@ public class DetectionController {
 
                 addPointToCurrentDetection(point);
                 pointsToAdd.add(point);
-
+                
                 new Thread(() -> {
                     detectionService.addPointsToCurrentDetection(pointsToAdd);
                 }).start();
+                
 
                 RadarState.setLastDetectionAngle(angle);
                 RadarState.setLastDetectionDistance(distance);
-                
 
                 return ResponseEntity.ok("Point added: Angle = " + angle + ", Distance = " + distance);
-            }
-            else {
+            } else {
                 return ResponseEntity.ok(null);
             }
         } else {
@@ -96,9 +105,13 @@ public class DetectionController {
         }
     }
 
+    @GetMapping("/start")
+    public ResponseEntity<String> startDetections() {
+        makeHTTPStartRequest();
+        return ResponseEntity.ok(null);
+    }
 
-
-    public boolean makeHTTPRequest() {
+    public boolean makeHTTPStartRequest() {
         String radarIp = RadarState.getIp();
 
         try {

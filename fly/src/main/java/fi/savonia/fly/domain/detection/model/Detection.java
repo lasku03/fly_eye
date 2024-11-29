@@ -33,6 +33,7 @@ public class Detection {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int detectionID;
     private Date date;
+    private String direction;
 
     //Relation ManyToMany Detection - Point
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)

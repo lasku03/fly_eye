@@ -10,17 +10,20 @@ import fi.savonia.fly.domain.point.model.RadarPoint;
 public class RadarDetection {
     private int detectionID;
     private Date date;
+    private String direction;
     List<RadarPoint> points;
 
     public RadarDetection(Detection detection) {
         this.detectionID = detection.getDetectionID();
         this.date = detection.getDate();
+        this.direction = detection.getDirection();
         this.points = convertPointsToRadarPoints(detection.getPoints());
     }
 
-    public RadarDetection(int detectionID, Date date, List<RadarPoint> points) {
+    public RadarDetection(int detectionID, Date date, String direction, List<RadarPoint> points) {
         this.detectionID = detectionID;
         this.date = date;
+        this.direction = direction;
         this.points = points;
     }
 
@@ -45,6 +48,12 @@ public class RadarDetection {
     }
     public void setDate(Date date) {
         this.date = date;
+    }
+    public String getDirection() {
+        return direction;
+    }
+    public void setDirection(String direction) {
+        this.direction = direction;
     }
     public List<RadarPoint> getPoints() {
         return points;

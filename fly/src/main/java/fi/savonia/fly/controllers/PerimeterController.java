@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
@@ -19,7 +18,6 @@ import fi.savonia.fly.domain.detection.model.RadarDetection;
 import fi.savonia.fly.domain.perimeter.model.Perimeter;
 import fi.savonia.fly.domain.perimeter.model.RadarPerimeter;
 import fi.savonia.fly.domain.point.model.Point;
-import fi.savonia.fly.domain.point.model.RadarPoint;
 import fi.savonia.fly.services.PerimeterService;
 
 @RestController
@@ -86,8 +84,7 @@ public class PerimeterController {
 
             if (makeHTTPRequest("perimeters")) {
                 return ResponseEntity.ok(null);
-            }
-            else {
+            } else {
                 return ResponseEntity.notFound().build();
             }
         } else {
@@ -100,13 +97,19 @@ public class PerimeterController {
             @PathVariable String direction) {
         if (RadarState.getCurrentPerimeter() != null) {
             distance = distance >= RadarState.getScale() ? 0 : distance / RadarState.getScale();
+            distance = Math.round(distance * 100.0) / 100.0;
             RadarState.setDirection(direction);
             if (angle != RadarState.getLastPerimeterAngle()) {
                 int angleDifference = Math.abs(angle - RadarState.getLastPerimeterAngle());
-                if (angleDifference > 1 && angleDifference <= RadarState.getMaximumAngleDistance()) {
-                    double lastDistance = RadarState.getLastPerimeterDistance() == 0 ? 1 : RadarState.getLastPerimeterDistance();
-                    double thisDistance = distance == 0 ? 1 : distance;
-                    double distanceToAdd = (thisDistance - lastDistance) / angleDifference;
+                if (angleDifference > 1) {
+                    double lastDistance = 0;
+                    double distanceToAdd = 0;
+
+                    if (angleDifference <= RadarState.getMaximumAngleDistance()) {
+                        lastDistance = RadarState.getLastPerimeterDistance() == 0 ? 1 : RadarState.getLastPerimeterDistance();
+                        double thisDistance = distance == 0 ? 1 : distance;
+                        distanceToAdd = (thisDistance - lastDistance) / angleDifference;
+                    }
 
                     if (direction.equals("COUNTERCLOCKWISE")) {
                         for (int i = RadarState.getLastPerimeterAngle() + 1; i < angle; i++) {
@@ -137,17 +140,17 @@ public class PerimeterController {
                         .angle(angle)
                         .distance(distance)
                         .build();
-                
+
                 perimeterPoints.add(point);
+                addPointToCurrentPerimeter(point);
 
                 RadarState.setLastPerimeterAngle(angle);
                 RadarState.setLastPerimeterDistance(distance);
-                addPointToCurrentPerimeter(point);
 
                 if (angle == 359) {
+                    perimeterService.saveCurrentPerimeter();
                     new Thread(() -> {
                         try {
-                            perimeterService.addPointsToCurrentPerimeter(perimeterPoints);
                             Thread.sleep(100); // Delay for 0.1 second
                             boolean success = makeHTTPRequest("dedections");
                             System.out.println("HTTP Request success: " + success);
@@ -156,11 +159,13 @@ public class PerimeterController {
                         }
                     }).start();
                 }
-                else {
-                    new Thread(() -> {
-                        perimeterService.addPointsToCurrentPerimeter(perimeterPoints);
-                    }).start();
-                }
+                /*
+                 * else {
+                 * new Thread(() -> {
+                 * perimeterService.saveCurrentPerimeter();
+                 * }).start();
+                 * }
+                 */
 
                 return ResponseEntity.ok(new RadarPerimeter(RadarState.getCurrentPerimeter()));
             }

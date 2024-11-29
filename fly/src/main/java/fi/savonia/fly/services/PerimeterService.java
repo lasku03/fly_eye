@@ -97,6 +97,12 @@ public class PerimeterService {
         RadarState.setCurrentPerimeter(perimeterRepository.save(currentPerimeter));
     }
 
+    public void saveCurrentPerimeter() {
+        // Obtain all perimeters
+        Perimeter currentPerimeter = RadarState.getCurrentPerimeter();
+        RadarState.setCurrentPerimeter(perimeterRepository.save(currentPerimeter));
+    }
+
     public void deletePerimeter(int id) {
         perimeterRepository.deleteById(id);
     }

@@ -1,4 +1,5 @@
 let scanButton = document.getElementById('scanPerimeterBtn');
+let stopButton = document.getElementById('stopRadarBtn');
 let deleteButton = document.getElementById('deletePerimeterBtn');
 
 scanButton.addEventListener("click", () => {
@@ -13,6 +14,7 @@ scanButton.addEventListener("click", () => {
                     if (!response.ok) {
                         throw new Error(`Server error: ${response.statusText}`);
                     }
+                    pointsMap = new Array(360).fill(null);
                     return response.text();
                 })
                 .then(result => {
@@ -27,6 +29,25 @@ scanButton.addEventListener("click", () => {
         }
     }
 });
+
+stopButton.addEventListener("click", () => {
+    stopDetections();
+})
+
+async function stopDetections() {
+    try {
+        const response = await fetch(`/stopRadar`); // Esperar la respuesta del servidor
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.statusText}`); // Lanzar error si la respuesta no es OK
+        }
+        const result = await response.text(); // Procesar la respuesta como texto
+        console.log("Radar stopped: ", result);
+    } catch (error) {
+        console.error("Error stopping the radar:", error);
+        alert("Error stopping the radar: " + error.message);
+    }
+}
+
 
 deleteButton.addEventListener("click", () => {
     let selectedPerimeter = document.querySelector(".perimeterItem_chosen");
@@ -121,17 +142,26 @@ function addPerimeterToList(id, name, date) {
     addListener();
 }
 
+
 function addListeners() {
     let perimeterItems = document.querySelectorAll(".perimeterItem");
 
     for (let i = 0; i < perimeterItems.length; i++) {
-        perimeterItems[i].addEventListener("click", () => {
+        perimeterItems[i].addEventListener("click", async () => {
             choosePerimeterItem(i);
             let id = perimeterItems[i].id.slice(1);
             getAndDrawPerimeterPoints(id);
+            stopDetections();
+            await sleep(500);
+            startDetections();
         });
     }
 }
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 function addListener() {
     let perimeterItems = document.querySelectorAll(".perimeterItem");
@@ -142,6 +172,19 @@ function addListener() {
 
     choosePerimeterItem(perimeterItems.length - 1);
 }
+
+async function startDetections() {
+    pointsMap = new Array(360).fill(null);
+
+    try {
+        const response = await fetch(`/detections/start`); // Espera la respuesta
+        const result = await response.json(); // Espera a procesar el JSON
+        console.log("Resul: ", result);
+    } catch (error) {
+        console.error('Error starting detections: ', error);
+    }
+}
+
 
 addListeners();
 connectWebSocket();
