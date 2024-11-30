@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO.Ports;
 using System.Linq;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,16 @@ namespace Sensor_basics_serial_to_http
         private enState state = enState.INIT;
         private enState stateBeforeWait = enState.INIT;
 
+        private uint noOfAnglesForMeanCounter = 0;
+        private const uint noOfAnglesForMean = 1;   // Define number of angles to get before calculating the mean value
+        private float measurementDistanceMeanSum = 0.0f;
+
+        private bool onceSend359 = false;
+        private bool onceSend0 = false;
+
         private string Angle { get; set; }
+        private string Distance { get; set; }
+        private string Direction { get; set; }
 
         private enum enState
         {
@@ -113,7 +123,11 @@ namespace Sensor_basics_serial_to_http
                         state = enState.WAITPERIM;
                         break;
                     case enState.WAITPERIM:
-                        if (Angle == "0")
+                        if(Angle == null)
+                        {
+                            break;
+                        }
+                        if (float.Parse(Angle) < 30)
                         {
                             state = enState.PERIM;
                         }
@@ -126,6 +140,7 @@ namespace Sensor_basics_serial_to_http
                         break;
                     case enState.PERIMSCANDONE:
                         Console.WriteLine("Perimeter scan done");
+                        HttpSend.SendData(host, 359.ToString(), Distance, "COUNTERCLOCKWISE", "perimeters");
                         sendHttpMode |= enSendHttpMode.NO;
                         stateBeforeWait = enState.PERIMSCANDONE;
                         Console.WriteLine("\nWait until a start command (\'start/perimeters' or 'start/dedections\') over HTTP is received...");
@@ -160,7 +175,7 @@ namespace Sensor_basics_serial_to_http
                 enState.GETREADY
             };
 
-            if(allowedStates.Contains(stateBeforeWait))
+            if (allowedStates.Contains(stateBeforeWait))
             {
                 state = enState.READY;
             }
@@ -231,7 +246,7 @@ namespace Sensor_basics_serial_to_http
         {
             enSerialComArduinoCmdRx cmd = e.Cmd;
 
-            switch(cmd)
+            switch (cmd)
             {
                 case enSerialComArduinoCmdRx.n_a:
                     break;
@@ -248,18 +263,85 @@ namespace Sensor_basics_serial_to_http
 
         private void DataChangedEventHandler(object sender, SerialComArduinoDataEventArgs e)
         {
-            
             string angle = e.Angle;
             string distance = e.Distance;
+            float distanceFloat = float.Parse(distance);
             string direction = e.Direction;
 
+            Distance = e.Distance;
+            Direction = e.Direction;
+
+
+            // calculate mean value
+            if (noOfAnglesForMeanCounter < noOfAnglesForMean)
+            {
+                measurementDistanceMeanSum += distanceFloat;
+                noOfAnglesForMeanCounter++;
+                return;
+            }
+            noOfAnglesForMeanCounter = 0;
+            distance = (measurementDistanceMeanSum/(float)noOfAnglesForMean).ToString();
+            measurementDistanceMeanSum = 0;
+
+            if ((angle == "0" || angle == "359") && (onceSend0== true) && sendHttpMode == enSendHttpMode.MEASUREMENT)
+            {
+                int proba = 0;
+            }
+
+            if(angle == "359" && (sendHttpMode == enSendHttpMode.MEASUREMENT || sendHttpMode == enSendHttpMode.PERIMETER) && onceSend359 == false)
+            {
+                HttpSend.SendData(host, angle, distance, direction);
+                if (direction == "CLOCKWISE")
+                {
+                    HttpSend.SendData(host, angle, distance, "COUNTERCLOCKWISE");
+                }
+                else
+                {
+                    HttpSend.SendData(host, angle, distance, "CLOCKWISE");
+                }
+
+                Angle = angle;
+                onceSend359 = true;
+                return;
+            } else if(angle == "359")
+            {
+                return;
+            }
+
+            onceSend359 = false;
+
+            if (angle == "0" && (sendHttpMode == enSendHttpMode.MEASUREMENT || sendHttpMode == enSendHttpMode.PERIMETER) && onceSend0 == false)
+            {
+                HttpSend.SendData(host, angle, distance, direction);
+                if (direction == "CLOCKWISE")
+                {
+                    HttpSend.SendData(host, angle, distance, "COUNTERCLOCKWISE");
+                }
+                else
+                {
+                    HttpSend.SendData(host, angle, distance, "CLOCKWISE");
+                }
+                
+                Angle = angle;
+                onceSend0 = true;
+                return;
+            }
+            else if (angle == "0")
+            {
+                return;
+            }
+
+            onceSend0 = false;
+
+            // send only one value per angle
             if (Angle == angle && sendHttpMode != enSendHttpMode.NO)
             {
                 return;
             }
-                
+
             Angle = e.Angle;
 
+            // send values to server
             switch (sendHttpMode)
             {
                 case enSendHttpMode.NO:
