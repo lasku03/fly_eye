@@ -13,12 +13,12 @@ enum enState {
   SM_PERIM1,
   SM_PERIM2,
   SM_PERIMIO,
+  SM_START_RUN,
   SM_RUN,
   SM_STOP
 };
 
 static bool zeroPositionFlag = false;
-static bool perimScanJustDone = false;
 
 static enState state = SM_INIT;
 
@@ -60,7 +60,7 @@ void sm_DoWork() {
     case SM_WAIT:  // Wait for command ('start' or 'start perimeter scan')
       cmd = sercom_ReadCmdWithoutWaiting();
       if (cmd == START) {
-        state = SM_RUN;
+        state = SM_START_RUN;
         Serial.println("Start measurement...");
         Serial.println("Wait for command 'stop' to terminate the measurement");
       } else if (cmd == SCANPERIM) {
@@ -87,22 +87,20 @@ void sm_DoWork() {
       break;
     case SM_PERIMIO:  // Perimeter scan done
       sercom_WriteCmd(PERIMIO);
-      perimScanJustDone = true;
+      motpos_ChangeDirectionManually(CLOCK_WISE);
       state = SM_WAIT;
       Serial.println("Wait for command ('start' or 'start perimeter scan')");
       break;
-    case SM_RUN:  // Do the measurement
-      if(perimScanJustDone) {
-        motpos_ChangeDirectionManually(CLOCK_WISE);
-        perimScanJustDone = false;
+    case SM_START_RUN:  // Start with doing the measurement
+      sm_DoMeasurement();
+      actualPos = motpos_GetActual();
+      if (actualPos >= 30 && actualPos <= 330) {
+        state = SM_RUN;
       }
-      else {
-        motpos_ChangeDirectionManually(COUNTER_CLOCK_WISE);
-      }
-      
+    case SM_RUN:  // Do the measurement    
       sm_DoMeasurement();
       static int i;
-      if (++i >= 10) {  // Check command only every 10 times, because the function as a big latency.
+      if (++i >= 10) {  // Check command only every 10 times, because the function has a big latency.
         i = 0;
         cmd = sercom_ReadCmdWithoutWaiting();
         if (cmd == STOP) {
