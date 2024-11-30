@@ -2,10 +2,12 @@
 #include "motor.h"
 #include "motorDriver.h"
 #include "motorPosition.h"
+#include "serialCommunication.h"
 
 #define motorSpeed 50  // Motorspeed in % (dutycycle)
 
 static enMotorState state = MOT_STOP;
+static const unsigned long delayTimeAtDirectionChange = 3000;
 
 void mot_Init() {
   state = MOT_STOP;
@@ -48,6 +50,9 @@ void mot_DoWork() {
       break;
     case MOT_BREAK:
       motdriv_Drive(motorSpeed / 2, directionOld);
+      if (directionOld == COUNTER_CLOCK_WISE) {
+        // sercom_WriteData(359, motpos_GetActual(), directionOld);
+      }
       directionOld = direction;
       // Wait a moment (500ms)
       timeActual = millis();
@@ -58,10 +63,9 @@ void mot_DoWork() {
       break;
     case MOT_WAIT:
       motdriv_Stop();
-      // Wait a moment (500ms)
-      delay(500);
+      // Wait a moment
       timeActual = millis();
-      if (timeActual - timePrev >= 500) {
+      if (timeActual - timePrev >= delayTimeAtDirectionChange) {
         state = MOT_RUN;
       }
       break;

@@ -54,6 +54,7 @@ void sm_DoWork() {
       break;
     case SM_READY:  // Send 'ready' over serial communication
       sercom_WriteCmd(READY);
+      motpos_ChangeDirectionManually(COUNTER_CLOCK_WISE);
       state = SM_WAIT;
       Serial.println("Wait for command ('start' or 'start perimeter scan')");
       break;

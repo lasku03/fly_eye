@@ -51,7 +51,12 @@ enDirection motpos_GetDirection() {
 }
 
 void motpos_SetToZero() {
-  actualPosition = 0;
+  if(direction == COUNTER_CLOCK_WISE) {
+    actualPosition = -1;
+  } else if(direction == CLOCK_WISE) {
+    actualPosition = 0;
+  }
+  
 }
 
 void motpos_ChangeDirectionAutomaticallyEnable(bool en) {
