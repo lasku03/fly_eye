@@ -13,11 +13,18 @@ enum enState {
   SM_PERIM1,
   SM_PERIM2,
   SM_PERIMIO,
+  SM_START_RUN,
   SM_RUN,
   SM_STOP
 };
 
+static bool zeroPositionFlag = false;
+
 static enState state = SM_INIT;
+
+void sm_SetZeroPositionFlag() {
+  zeroPositionFlag = true;
+}
 
 void sm_DoMeasurement() {
   mot_Run();
@@ -35,25 +42,26 @@ void sm_DoWork() {
       Serial.println("Wait for 'get ready'");
       sercom_WaitForCmd(GETREADY);
       Serial.println("Drive to zero position...");
+      motpos_ChangeDirectionManually(CLOCK_WISE);
       mot_Run();
       state = SM_ZERO;
       break;
     case SM_ZERO:  // Drive to the zero position slowly
-      if (digitalRead(POSITION_REF_PIN)) {
+      if (zeroPositionFlag) {
         mot_Stop();
         state = SM_READY;
       }
       break;
     case SM_READY:  // Send 'ready' over serial communication
-      motpos_ChangeDirectionManually(CLOCK_WISE);
       sercom_WriteCmd(READY);
+      motpos_ChangeDirectionManually(COUNTER_CLOCK_WISE);
       state = SM_WAIT;
       Serial.println("Wait for command ('start' or 'start perimeter scan')");
       break;
     case SM_WAIT:  // Wait for command ('start' or 'start perimeter scan')
       cmd = sercom_ReadCmdWithoutWaiting();
       if (cmd == START) {
-        state = SM_RUN;
+        state = SM_START_RUN;
         Serial.println("Start measurement...");
         Serial.println("Wait for command 'stop' to terminate the measurement");
       } else if (cmd == SCANPERIM) {
@@ -62,6 +70,7 @@ void sm_DoWork() {
       }
       break;
     case SM_PERIM1:  // Do perimeter scan until the middle
+      motpos_ChangeDirectionManually(COUNTER_CLOCK_WISE);
       sm_DoMeasurement();
       actualPos = motpos_GetActual();
       if (actualPos >= 150 && actualPos <= 210) {
@@ -71,7 +80,7 @@ void sm_DoWork() {
       break;
     case SM_PERIM2:  // Do perimeter scan until the end
       sm_DoMeasurement();
-      if (digitalRead(POSITION_REF_PIN)) {
+      if (zeroPositionFlag) {
         mot_Stop();
         state = SM_PERIMIO;
         Serial.println("Perimeter scan done");
@@ -79,13 +88,20 @@ void sm_DoWork() {
       break;
     case SM_PERIMIO:  // Perimeter scan done
       sercom_WriteCmd(PERIMIO);
+      motpos_ChangeDirectionManually(CLOCK_WISE);
       state = SM_WAIT;
       Serial.println("Wait for command ('start' or 'start perimeter scan')");
       break;
-    case SM_RUN:  // Do the measurement
+    case SM_START_RUN:  // Start with doing the measurement
+      sm_DoMeasurement();
+      actualPos = motpos_GetActual();
+      if (actualPos >= 30 && actualPos <= 330) {
+        state = SM_RUN;
+      }
+    case SM_RUN:  // Do the measurement    
       sm_DoMeasurement();
       static int i;
-      if (++i >= 10) {  // Check command only every 10 times, because the function as a big latency.
+      if (++i >= 10) {  // Check command only every 10 times, because the function has a big latency.
         i = 0;
         cmd = sercom_ReadCmdWithoutWaiting();
         if (cmd == STOP) {
@@ -101,4 +117,14 @@ void sm_DoWork() {
       break;
   }
   // Serial.println(state);
+
+  // Reset zero position flag
+  zeroPositionFlag = false;
+
+  if(state == SM_RUN) {
+    motpos_ChangeDirectionAutomaticallyEnable(true);
+  }
+  else {
+    motpos_ChangeDirectionAutomaticallyEnable(false);
+  }
 }

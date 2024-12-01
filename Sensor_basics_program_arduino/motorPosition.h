@@ -59,6 +59,15 @@ enDirection motpos_GetDirection();
 void motpos_SetToZero();
 
 /**
+ * @brief Enable or disables the automatic direction change if the ISR is triggered.
+ *
+ * @param en True enables the automatic direction change, false disables it.
+ *
+ * @pre Inititalization of the driver with the function Init().
+ */
+void motpos_ChangeDirectionAutomaticallyEnable(bool en);
+
+/**
  * @brief Change the direction manually.
  *
  * @param direction New direction.

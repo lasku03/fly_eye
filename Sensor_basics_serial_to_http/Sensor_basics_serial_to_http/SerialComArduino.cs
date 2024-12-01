@@ -12,8 +12,9 @@ namespace Sensor_basics_serial_to_http
         public string ComPort { get; private set; }
         public bool IsConnected
         {
-            get { return SerialPort.IsOpen; }
+            get { return SerialPort.IsOpen && arduinoConnectedAndInizialized; }
         }
+        private bool arduinoConnectedAndInizialized = false;
 
 
         private SerialPort SerialPort = new SerialPort();
@@ -73,11 +74,27 @@ namespace Sensor_basics_serial_to_http
 
             SerialPort.ReadExisting();  // free up serial buffer
 
+            // reset the Arduino by toggling the DTR line
+            SerialPort.DtrEnable = false; // Drop DTR
+            Thread.Sleep(100);           // Wait for 100ms
+            SerialPort.DtrEnable = true; // Raise DTR
+
+            // wait until Arduino drivers are initialized
+            String responseArduino = String.Empty;
+            while(responseArduino != "------Initialization done-------\r")
+            {
+                responseArduino = SerialPort.ReadLine();
+                Console.WriteLine("Message received from microcontroller: " + responseArduino);
+            }
+
             // start thread to read serial data continous
             Thread t = new Thread(SerialPortReadData);
             t.IsBackground = true;
             t.Name = "SerialComThread";
             t.Start();
+
+            // set initialized flag
+            arduinoConnectedAndInizialized = true;
 
         }
 
@@ -133,7 +150,7 @@ namespace Sensor_basics_serial_to_http
             }
             else
             {
-                Console.WriteLine($"Message received from microcontroller: {substrings[0]}\n");
+                Console.WriteLine($"Message received from microcontroller: {substrings[0]}");
             }
         }
 

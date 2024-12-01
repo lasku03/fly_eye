@@ -23,6 +23,7 @@
 
 // Enums
 enum enSerRxCmd {
+  RX_NA,
   START,    // Serial cmd: start\l\n
   STOP,     // Serial cmd: stop\l\n
   GETREADY, // Serial cmd: get ready\l\n
@@ -30,6 +31,7 @@ enum enSerRxCmd {
 };
 
 enum enSerTxCmd {
+  TX_NA,
   READY,    // Serial cmd: ready\l\n
   PERIMIO   // Serial cmd: perimeter scan done\l\n
 };

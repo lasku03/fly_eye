@@ -39,8 +39,6 @@ void sercom_WriteCmd(enSerTxCmd cmd) {
 }
 
 enSerRxCmd sercom_StringToCmd(String input) {
-  Serial.print("cmd received:");
-  Serial.println(input);
   if (input == "start") {
     return START;
   } else if (input == "stop") {
@@ -50,6 +48,8 @@ enSerRxCmd sercom_StringToCmd(String input) {
   } else if (input == "start perimeter scan") {
     return SCANPERIM;
   } else {
+    Serial.print("Unknown command received: ");
+    Serial.println(input);
     return;
   }
 }
@@ -73,10 +73,7 @@ enSerRxCmd sercom_ReadCmdWait() {
       }
     }
   }
-
-  Serial.print("Whole received string: ");
-  Serial.println(input);
-
+  
   enSerRxCmd cmd = sercom_StringToCmd(input);
 
   return cmd;

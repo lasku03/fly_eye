@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "motorPosition.h"
+#include "stateMachine.h"
 
 static int16_t actualPosition = 0;
 static enDirection direction = CLOCK_WISE;
@@ -9,6 +10,9 @@ static bool isrZeroTriggered = false;
 
 static const unsigned int noOfTurnsPerDirection = 1;
 static unsigned int noOfTurns = 0;
+static bool automaticDirectionChangeAllowed = false;
+static bool automaticDirectionChangeToClockwiseAllowed = false;
+static bool automaticDirectionChangeToCounterclockwiseAllowed = false;
 
 static const unsigned int noOfPositionPoints = 18;  // The effective resolution is twice the number of position points, because the ISR is triggered with rising and falling edge.
 static const unsigned int degreesPerPoint = 360 / noOfPositionPoints / 2;
@@ -19,8 +23,8 @@ static void motpos_IsrPosition() {
 }
 
 static void motpos_IsrZero() {
-  // Serial.println("ISR Position fired");
   isrZeroTriggered = true;
+  sm_SetZeroPositionFlag();
 }
 
 void motpos_Init() {
@@ -47,24 +51,47 @@ enDirection motpos_GetDirection() {
 }
 
 void motpos_SetToZero() {
-  actualPosition = 0;
+  if(direction == COUNTER_CLOCK_WISE) {
+    actualPosition = -1;
+  } else if(direction == CLOCK_WISE) {
+    actualPosition = 0;
+  }
+  
+}
+
+void motpos_ChangeDirectionAutomaticallyEnable(bool en) {
+  automaticDirectionChangeAllowed = en;
 }
 
 void motpos_ChangeDirectionManually(enDirection directionNew) {
   direction = directionNew;
+
+  // Block automatic direction change
+  if(directionNew == CLOCK_WISE) {
+    automaticDirectionChangeToCounterclockwiseAllowed = false;
+  } else if(directionNew == COUNTER_CLOCK_WISE) {
+    automaticDirectionChangeToClockwiseAllowed = false;
+  }
 }
 
 void motpos_ChangeByOne() {
-  if (direction == CLOCK_WISE) {
+  if (direction == COUNTER_CLOCK_WISE) {
     actualPosition += degreesPerPoint;
-  } else if (direction == COUNTER_CLOCK_WISE) {
+  } else if (direction == CLOCK_WISE) {
     actualPosition -= degreesPerPoint;
   }
 
-  if(actualPosition >= 360) {
+  if (actualPosition >= 360) {
     actualPosition = 359;
   } else if (actualPosition < -360) {
     actualPosition = -360;
+  }
+
+  // Reactivate automatic direction change
+  if(actualPosition >= 30) {
+    automaticDirectionChangeToClockwiseAllowed = true;
+  } else if(actualPosition <= 330) {
+    automaticDirectionChangeToCounterclockwiseAllowed = true;
   }
 }
 
@@ -72,7 +99,7 @@ void motpos_DoWork() {
   static unsigned long timePrevPosition = 0;
   static unsigned long timePrevZero = 0;
   const unsigned long debounceTimeMsPosition = 50;
-  const unsigned long debounceTimeMsZero = 1000;
+  const unsigned long debounceTimeMsZero = 5000;
   unsigned long timeActual = millis();
 
   enDirection directionNew;
@@ -100,14 +127,16 @@ void motpos_DoWork() {
 
       // Change direction if nescessary
       noOfTurns++;
-      if (noOfTurns >= noOfTurnsPerDirection) {
-        if (direction == CLOCK_WISE) {
-          directionNew = COUNTER_CLOCK_WISE;
-        } else {
-          directionNew = CLOCK_WISE;
+      if (automaticDirectionChangeAllowed) {
+        if (noOfTurns >= noOfTurnsPerDirection && ((direction == CLOCK_WISE && automaticDirectionChangeToCounterclockwiseAllowed) || (direction == COUNTER_CLOCK_WISE && automaticDirectionChangeToClockwiseAllowed))) {
+          if (direction == CLOCK_WISE) {
+            directionNew = COUNTER_CLOCK_WISE;
+          } else {
+            directionNew = CLOCK_WISE;
+          }
+          motpos_ChangeDirectionManually(directionNew);
+          noOfTurns = 0;
         }
-        motpos_ChangeDirectionManually(directionNew);
-        noOfTurns = 0;
       }
     }
     isrZeroTriggered = false;
