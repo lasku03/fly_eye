@@ -61,8 +61,15 @@ public class DetectionService {
             addIfNotExist(currentDetection, listPoint);
         }
         
-        // Save the updated detection
-        RadarState.setCurrentDetection(detectionRepository.save(currentDetection));
+        detectionRepository.save(currentDetection);
+    }
+
+    public void addPointsToDetection(Detection detection, List<Point> points) {
+        for (Point listPoint : points) {
+            addIfNotExist(detection, listPoint);
+        }
+        
+        detectionRepository.save(detection);
     }
 
     public void addPointToCurrentDetection(Point point) {
@@ -70,6 +77,6 @@ public class DetectionService {
         
         addIfNotExist(currentDetection, point);
         // Save the updated detection
-        RadarState.setCurrentDetection(detectionRepository.save(currentDetection));
+        detectionRepository.save(currentDetection);
     }
 }

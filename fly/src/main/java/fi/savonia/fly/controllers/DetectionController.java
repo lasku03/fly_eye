@@ -2,6 +2,7 @@ package fi.savonia.fly.controllers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import fi.savonia.fly.domain.detection.model.Detection;
+import fi.savonia.fly.domain.detection.model.QueueDetection;
 import fi.savonia.fly.domain.point.model.Point;
 import fi.savonia.fly.domain.point.model.RadarPoint;
 import fi.savonia.fly.services.DetectionService;
@@ -29,8 +32,9 @@ public class DetectionController {
     @Autowired
     private DetectionService detectionService;
 
-    private final BlockingQueue<List<Point>> pointsQueue = new ArrayBlockingQueue<>(1000);
+    private final BlockingQueue<QueueDetection> pointsQueue = new ArrayBlockingQueue<>(10);
     private Thread processingThread;
+    private List<Point> pointsToAdd = new ArrayList<>();
 
     public DetectionController() {
         startThread();
@@ -47,64 +51,78 @@ public class DetectionController {
         if (RadarState.getCurrentPerimeter() != null) {
             distance = distance >= RadarState.getScale() ? 0 : distance / RadarState.getScale();
             distance = Math.round(distance * 100.0) / 100.0;
-            List<Point> pointsToAdd = new ArrayList<>();
-            if (direction != RadarState.getDirection()) {
+            if (!direction.equals(RadarState.getDirection())) {
+                if (!pointsToAdd.isEmpty()) {
+                    pointsQueue.add(new QueueDetection(RadarState.getCurrentDetection(), pointsToAdd));
+                    pointsToAdd = new ArrayList<>();
+                }
+                if ((RadarState.getLastDetectionAngle() != 359 || RadarState.getLastDetectionAngle() != 0)
+                        && RadarState.getLastDetectionAngle() != -1) {
+                    int zeroAngle = RadarState.getDirection().equals("CLOCKWISE") ? -1 : 360;
+                    addMiddlePoints(RadarState.getDirection(), zeroAngle, 0, 0);
+                }
                 detectionService.createDetection();
             }
             RadarState.setDirection(direction);
             int angleDifference = Math.abs(angle - RadarState.getLastDetectionAngle());
-            if (angleDifference > 1) {
-                double lastDistance = 0;
-                double distanceToAdd = 0;
-                if (angleDifference <= RadarState.getMaximumAngleDistance()) {
-                    lastDistance = RadarState.getLastDetectionDistance() == 0 ? 1
-                            : RadarState.getLastDetectionDistance();
-                    double thisDistance = distance == 0 ? 1 : distance;
-                    distanceToAdd = (thisDistance - lastDistance) / angleDifference;
+            if (RadarState.getLastDetectionAngle() == -1 || angleDifference < 180) {
+                if (angleDifference > 1) {
+                    double lastDistance = 0;
+                    double distanceToAdd = 0;
+                    if (angleDifference <= RadarState.getMaximumAngleDistance()) {
+                        lastDistance = RadarState.getLastDetectionDistance() == 0 ? 1
+                                : RadarState.getLastDetectionDistance();
+                        double thisDistance = distance == 0 ? 1 : distance;
+                        distanceToAdd = (thisDistance - lastDistance) / angleDifference;
+                    }
+
+                    addMiddlePoints(direction, angle, lastDistance, distanceToAdd);
                 }
 
-                if (direction.equals("COUNTERCLOCKWISE")) {
-                    for (int i = RadarState.getLastDetectionAngle() + 1; i < angle; i++) {
-                        lastDistance += distanceToAdd;
-                        lastDistance = lastDistance == 1 ? 0 : lastDistance;
-                        Point midPoint = Point.builder()
-                                .angle(i)
-                                .distance(isInsideThePerimeter(i, lastDistance) ? lastDistance : 0)
-                                .build();
-                        addPointToCurrentDetection(midPoint);
-                        pointsToAdd.add(midPoint);
-                    }
-                } else {
-                    int lastDetectionAngle = RadarState.getLastDetectionAngle() == 0 ? 360
-                            : RadarState.getLastDetectionAngle();
-                    for (int i = lastDetectionAngle - 1; i > angle; i--) {
-                        lastDistance += distanceToAdd;
-                        lastDistance = lastDistance == 1 ? 0 : lastDistance;
-                        Point midPoint = Point.builder()
-                                .angle(i)
-                                .distance(isInsideThePerimeter(i, lastDistance) ? lastDistance : 0)
-                                .build();
-                        addPointToCurrentDetection(midPoint);
-                        pointsToAdd.add(midPoint);
-                    }
-                }
+                Point point = Point.builder()
+                        .angle(angle)
+                        .distance(isInsideThePerimeter(angle, distance) ? distance : 0)
+                        .build();
+
+                addPointToCurrentDetection(point);
+                pointsToAdd.add(point);
+
+                RadarState.setLastDetectionAngle(angle);
+                RadarState.setLastDetectionDistance(distance);
+
+                return ResponseEntity.ok("Point added: Angle = " + angle + ", Distance = " + distance);
             }
-
-            Point point = Point.builder()
-                    .angle(angle)
-                    .distance(isInsideThePerimeter(angle, distance) ? distance : 0)
-                    .build();
-
-            addPointToCurrentDetection(point);
-            pointsToAdd.add(point);
-            pointsQueue.put(pointsToAdd);
-
-            RadarState.setLastDetectionAngle(angle);
-            RadarState.setLastDetectionDistance(distance);
-
-            return ResponseEntity.ok("Point added: Angle = " + angle + ", Distance = " + distance);
+            return ResponseEntity.ok("Point ignored");
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    public void addMiddlePoints(String direction, int angle, double lastDistance, double distanceToAdd) {
+        if (direction.equals("COUNTERCLOCKWISE")) {
+            for (int i = RadarState.getLastDetectionAngle() + 1; i < angle; i++) {
+                lastDistance += distanceToAdd;
+                lastDistance = lastDistance == 1 ? 0 : lastDistance;
+                Point midPoint = Point.builder()
+                        .angle(i)
+                        .distance(isInsideThePerimeter(i, lastDistance) ? lastDistance : 0)
+                        .build();
+                addPointToCurrentDetection(midPoint);
+                pointsToAdd.add(midPoint);
+            }
+        } else {
+            int lastDetectionAngle = RadarState.getLastDetectionAngle() == 0 ? 360
+                    : RadarState.getLastDetectionAngle();
+            for (int i = lastDetectionAngle - 1; i > angle; i--) {
+                lastDistance += distanceToAdd;
+                lastDistance = lastDistance == 1 ? 0 : lastDistance;
+                Point midPoint = Point.builder()
+                        .angle(i)
+                        .distance(isInsideThePerimeter(i, lastDistance) ? lastDistance : 0)
+                        .build();
+                addPointToCurrentDetection(midPoint);
+                pointsToAdd.add(midPoint);
+            }
         }
     }
 
@@ -145,11 +163,9 @@ public class DetectionController {
     private void processPoints() {
         try {
             while (true) {
-                List<Point> points = pointsQueue.take();
-                for (Point point : points) {
-                    detectionService.addPointToCurrentDetection(point);
-                }
-                Thread.sleep(50);
+                QueueDetection queueDetection = pointsQueue.take();
+                detectionService.addPointsToDetection(queueDetection.getDetection(), queueDetection.getPoints());
+                Thread.sleep(100);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt(); // Interrumpe el hilo si ocurre un error
