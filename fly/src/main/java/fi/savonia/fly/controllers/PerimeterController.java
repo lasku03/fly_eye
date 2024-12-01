@@ -18,6 +18,7 @@ import fi.savonia.fly.domain.detection.model.RadarDetection;
 import fi.savonia.fly.domain.perimeter.model.Perimeter;
 import fi.savonia.fly.domain.perimeter.model.RadarPerimeter;
 import fi.savonia.fly.domain.point.model.Point;
+import fi.savonia.fly.domain.point.model.RadarPoint;
 import fi.savonia.fly.services.PerimeterService;
 
 @RestController
@@ -99,78 +100,68 @@ public class PerimeterController {
             distance = distance >= RadarState.getScale() ? 0 : distance / RadarState.getScale();
             distance = Math.round(distance * 100.0) / 100.0;
             RadarState.setDirection(direction);
-            if (angle != RadarState.getLastPerimeterAngle()) {
-                int angleDifference = Math.abs(angle - RadarState.getLastPerimeterAngle());
-                if (angleDifference > 1) {
-                    double lastDistance = 0;
-                    double distanceToAdd = 0;
+            int angleDifference = Math.abs(angle - RadarState.getLastPerimeterAngle());
+            if (angleDifference > 1) {
+                double lastDistance = 0;
+                double distanceToAdd = 0;
 
-                    if (angleDifference <= RadarState.getMaximumAngleDistance()) {
-                        lastDistance = RadarState.getLastPerimeterDistance() == 0 ? 1 : RadarState.getLastPerimeterDistance();
-                        double thisDistance = distance == 0 ? 1 : distance;
-                        distanceToAdd = (thisDistance - lastDistance) / angleDifference;
-                    }
-
-                    if (direction.equals("COUNTERCLOCKWISE")) {
-                        for (int i = RadarState.getLastPerimeterAngle() + 1; i < angle; i++) {
-                            lastDistance += distanceToAdd;
-                            lastDistance = lastDistance == 1 ? 0 : lastDistance;
-                            Point midPoint = Point.builder()
-                                    .angle(i)
-                                    .distance(lastDistance)
-                                    .build();
-                            addPointToCurrentPerimeter(midPoint);
-                            perimeterPoints.add(midPoint);
-                        }
-                    } else {
-                        for (int i = RadarState.getLastPerimeterAngle() - 1; i > angle; i--) {
-                            lastDistance += distanceToAdd;
-                            lastDistance = lastDistance == 1 ? 0 : lastDistance;
-                            Point midPoint = Point.builder()
-                                    .angle(i)
-                                    .distance(lastDistance)
-                                    .build();
-                            addPointToCurrentPerimeter(midPoint);
-                            perimeterPoints.add(midPoint);
-                        }
-                    }
+                if (angleDifference <= RadarState.getMaximumAngleDistance()) {
+                    lastDistance = RadarState.getLastPerimeterDistance() == 0 ? 1
+                            : RadarState.getLastPerimeterDistance();
+                    double thisDistance = distance == 0 ? 1 : distance;
+                    distanceToAdd = (thisDistance - lastDistance) / angleDifference;
                 }
 
-                Point point = Point.builder()
-                        .angle(angle)
-                        .distance(distance)
-                        .build();
-
-                perimeterPoints.add(point);
-                addPointToCurrentPerimeter(point);
-
-                RadarState.setLastPerimeterAngle(angle);
-                RadarState.setLastPerimeterDistance(distance);
-
-                if (angle == 359) {
-                    perimeterService.saveCurrentPerimeter();
-                    new Thread(() -> {
-                        try {
-                            Thread.sleep(100); // Delay for 0.1 second
-                            boolean success = makeHTTPRequest("dedections");
-                            System.out.println("HTTP Request success: " + success);
-                        } catch (InterruptedException e) {
-                            System.out.println("Thread interrupted: " + e.getMessage());
-                        }
-                    }).start();
+                if (direction.equals("COUNTERCLOCKWISE")) {
+                    for (int i = RadarState.getLastPerimeterAngle() + 1; i < angle; i++) {
+                        lastDistance += distanceToAdd;
+                        lastDistance = lastDistance == 1 ? 0 : lastDistance;
+                        Point midPoint = Point.builder()
+                                .angle(i)
+                                .distance(lastDistance)
+                                .build();
+                        addPointToCurrentPerimeter(midPoint);
+                        perimeterPoints.add(midPoint);
+                    }
+                } else {
+                    for (int i = RadarState.getLastPerimeterAngle() - 1; i > angle; i--) {
+                        lastDistance += distanceToAdd;
+                        lastDistance = lastDistance == 1 ? 0 : lastDistance;
+                        Point midPoint = Point.builder()
+                                .angle(i)
+                                .distance(lastDistance)
+                                .build();
+                        addPointToCurrentPerimeter(midPoint);
+                        perimeterPoints.add(midPoint);
+                    }
                 }
-                /*
-                 * else {
-                 * new Thread(() -> {
-                 * perimeterService.saveCurrentPerimeter();
-                 * }).start();
-                 * }
-                 */
-
-                return ResponseEntity.ok(new RadarPerimeter(RadarState.getCurrentPerimeter()));
             }
 
-            return ResponseEntity.ok(null);
+            Point point = Point.builder()
+                    .angle(angle)
+                    .distance(distance)
+                    .build();
+
+            perimeterPoints.add(point);
+            addPointToCurrentPerimeter(point);
+
+            RadarState.setLastPerimeterAngle(angle);
+            RadarState.setLastPerimeterDistance(distance);
+
+            if (angle == 359) {
+                perimeterService.saveCurrentPerimeter();
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(1000); // Delay for 0.1 second
+                        boolean success = makeHTTPRequest("dedections");
+                        System.out.println("HTTP Request success: " + success);
+                    } catch (InterruptedException e) {
+                        System.out.println("Thread interrupted: " + e.getMessage());
+                    }
+                }).start();
+            }
+
+            return ResponseEntity.ok(new RadarPerimeter(RadarState.getCurrentPerimeter()));
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -185,6 +176,7 @@ public class PerimeterController {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + radarIp + ":8081/start/" + type;
             String response = restTemplate.getForObject(url, String.class);
+            System.out.println(response);
             return true;
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -194,19 +186,22 @@ public class PerimeterController {
 
     public void addPointToCurrentPerimeter(Point point) {
         Perimeter currentPerimeter = RadarState.getCurrentPerimeter();
-        addIfNotExist(currentPerimeter, point);
-        RadarPerimeter lastRadarPerimeter = new RadarPerimeter(currentPerimeter);
-        messagingTemplate.convertAndSend("/topic/newPerimeterPoint", lastRadarPerimeter);
+        if (addIfNotExist(currentPerimeter, point)) {
+            RadarPoint radarPoint = new RadarPoint(point);
+            messagingTemplate.convertAndSend("/topic/newPerimeterPoint", radarPoint);
+        }
     }
 
-    public void addIfNotExist(Perimeter perimeter, Point newPoint) {
+    public boolean addIfNotExist(Perimeter perimeter, Point newPoint) {
         if (perimeter.getPoints() == null) {
             perimeter.setPoints(new ArrayList<>());
         }
         Point point = perimeter.getAnglePoint(newPoint.getAngle());
         if (point == null) {
             perimeter.getPoints().add(newPoint);
+            return true;
         }
+        return false;
     }
 
     @GetMapping("/end")

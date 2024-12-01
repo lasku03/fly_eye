@@ -15,8 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import fi.savonia.fly.domain.detection.model.RadarDetection;
-import fi.savonia.fly.domain.perimeter.model.RadarPerimeter;
 import fi.savonia.fly.domain.point.model.Point;
 import fi.savonia.fly.domain.point.model.RadarPoint;
 import fi.savonia.fly.services.DetectionService;
@@ -49,73 +47,62 @@ public class DetectionController {
         if (RadarState.getCurrentPerimeter() != null) {
             distance = distance >= RadarState.getScale() ? 0 : distance / RadarState.getScale();
             distance = Math.round(distance * 100.0) / 100.0;
-            RadarState.setDirection(direction);
             List<Point> pointsToAdd = new ArrayList<>();
-            if (((angle == 0) && (direction.equals("COUNTERCLOCKWISE"))) || 
-                    (angle == 359) && (direction.equals("CLOCKWISE")) ||
-                    RadarState.getCurrentDetection() == null) {
+            if (direction != RadarState.getDirection()) {
                 detectionService.createDetection();
             }
-            if (angle != RadarState.getLastDetectionAngle()) {
-                int angleDifference = Math.abs(angle - RadarState.getLastDetectionAngle());
-                if (angleDifference > 1) {
-                    double lastDistance = 0;
-                    double distanceToAdd = 0;
-                    if (angleDifference <= RadarState.getMaximumAngleDistance()) {
-                        lastDistance = RadarState.getLastDetectionDistance() == 0 ? 1
-                                : RadarState.getLastDetectionDistance();
-                        double thisDistance = distance == 0 ? 1 : distance;
-                        distanceToAdd = (thisDistance - lastDistance) / angleDifference;
-                    }
-
-                    if (direction.equals("COUNTERCLOCKWISE")) {
-                        for (int i = RadarState.getLastDetectionAngle() + 1; i < angle; i++) {
-                            lastDistance += distanceToAdd;
-                            lastDistance = lastDistance == 1 ? 0 : lastDistance;
-                            Point midPoint = Point.builder()
-                                    .angle(i)
-                                    .distance(isInsideThePerimeter(i, lastDistance) ? lastDistance : 0)
-                                    .build();
-                            addPointToCurrentDetection(midPoint);
-                            pointsToAdd.add(midPoint);
-                        }
-                    } else {
-                        int lastDetectionAngle = RadarState.getLastDetectionAngle() == 0 ? 360
-                                : RadarState.getLastDetectionAngle();
-                        for (int i = lastDetectionAngle - 1; i > angle; i--) {
-                            lastDistance += distanceToAdd;
-                            lastDistance = lastDistance == 1 ? 0 : lastDistance;
-                            Point midPoint = Point.builder()
-                                    .angle(i)
-                                    .distance(isInsideThePerimeter(i, lastDistance) ? lastDistance : 0)
-                                    .build();
-                            addPointToCurrentDetection(midPoint);
-                            pointsToAdd.add(midPoint);
-                        }
-                    }
+            RadarState.setDirection(direction);
+            int angleDifference = Math.abs(angle - RadarState.getLastDetectionAngle());
+            if (angleDifference > 1) {
+                double lastDistance = 0;
+                double distanceToAdd = 0;
+                if (angleDifference <= RadarState.getMaximumAngleDistance()) {
+                    lastDistance = RadarState.getLastDetectionDistance() == 0 ? 1
+                            : RadarState.getLastDetectionDistance();
+                    double thisDistance = distance == 0 ? 1 : distance;
+                    distanceToAdd = (thisDistance - lastDistance) / angleDifference;
                 }
 
-                Point point = Point.builder()
-                        .angle(angle)
-                        .distance(isInsideThePerimeter(angle, distance) ? distance : 0)
-                        .build();
-
-                addPointToCurrentDetection(point);
-                pointsToAdd.add(point);
-                pointsQueue.put(pointsToAdd);
-                
-                //detectionService.addPointsToCurrentDetection(pointsToAdd);
-                /*new Thread(() -> {
-                    detectionService.addPointsToCurrentDetection(pointsToAdd);
-                }).start();*/
-
-                RadarState.setLastDetectionAngle(angle);
-                RadarState.setLastDetectionDistance(distance);
-
-                return ResponseEntity.ok("Point added: Angle = " + angle + ", Distance = " + distance);
-            } else {
-                return ResponseEntity.ok(null);
+                if (direction.equals("COUNTERCLOCKWISE")) {
+                    for (int i = RadarState.getLastDetectionAngle() + 1; i < angle; i++) {
+                        lastDistance += distanceToAdd;
+                        lastDistance = lastDistance == 1 ? 0 : lastDistance;
+                        Point midPoint = Point.builder()
+                                .angle(i)
+                                .distance(isInsideThePerimeter(i, lastDistance) ? lastDistance : 0)
+                                .build();
+                        addPointToCurrentDetection(midPoint);
+                        pointsToAdd.add(midPoint);
+                    }
+                } else {
+                    int lastDetectionAngle = RadarState.getLastDetectionAngle() == 0 ? 360
+                            : RadarState.getLastDetectionAngle();
+                    for (int i = lastDetectionAngle - 1; i > angle; i--) {
+                        lastDistance += distanceToAdd;
+                        lastDistance = lastDistance == 1 ? 0 : lastDistance;
+                        Point midPoint = Point.builder()
+                                .angle(i)
+                                .distance(isInsideThePerimeter(i, lastDistance) ? lastDistance : 0)
+                                .build();
+                        addPointToCurrentDetection(midPoint);
+                        pointsToAdd.add(midPoint);
+                    }
+                }
             }
+
+            Point point = Point.builder()
+                    .angle(angle)
+                    .distance(isInsideThePerimeter(angle, distance) ? distance : 0)
+                    .build();
+
+            addPointToCurrentDetection(point);
+            pointsToAdd.add(point);
+            pointsQueue.put(pointsToAdd);
+
+            RadarState.setLastDetectionAngle(angle);
+            RadarState.setLastDetectionDistance(distance);
+
+            return ResponseEntity.ok("Point added: Angle = " + angle + ", Distance = " + distance);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -136,6 +123,7 @@ public class DetectionController {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + radarIp + ":8081/start/dedections";
             String response = restTemplate.getForObject(url, String.class);
+            System.out.println(response);
             return true;
         } catch (Exception e) {
             System.out.println(e.getMessage());
