@@ -97,18 +97,24 @@ function connectWebSocket() {
 
         stompClient.subscribe('/topic/newPerimeterPoint', function (message) {
             const radarPoint = JSON.parse(message.body);
-            fillPerimeterMap(radarPoint);
+            addToPerimeterMap(radarPoint);
             drawPerimeter();
         });
     });
 }
 
-function fillPerimeterMap(radarPoint) {
+function addToPerimeterMap(radarPoint) {
     const angle = radarPoint.angle;
     const distance = radarPoint.distance;
 
     perimeterMap.push({ angle, distance: distance });
     addAngle(perimeterMap[perimeterMap.length - 1].angle);
+}
+
+function fillPerimeterMap(points) {
+    points.forEach(point => {
+        perimeterMap.push({ angle: point.angle, distance: point.distance });        
+    });
 }
 
 function addPerimeterToList(id, name, date) {

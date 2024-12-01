@@ -44,7 +44,7 @@ public class Perimeter {
     List<Point> points;
 
     // Relation between Detection and Perimeter
-    @OneToMany(mappedBy = "perimeter", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "perimeter", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     List<Detection> detections;
 
     public Point getAnglePoint(int angle) {

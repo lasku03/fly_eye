@@ -167,6 +167,19 @@ function choosePerimeterItem(num) {
     }
 }
 
+function choosePerimeterItemById(perimeterID) {
+    let perimeterItems = document.querySelectorAll(".perimeterItem");
+    for (let i = 0; i < perimeterItems.length; i++) {
+        let id = perimeterItems[i].id.slice(1);
+        if (id == perimeterID) {
+            perimeterItems[i].classList.add("perimeterItem_chosen");
+        }
+        else {
+            perimeterItems[i].classList.remove("perimeterItem_chosen");
+        }
+    }
+}
+
 
 // Paint the radar
 drawRadar();

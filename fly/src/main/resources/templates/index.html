@@ -52,6 +52,17 @@
 
     <script src="/js/index.js"></script>
     <script src="/js/radar.js"></script>
+    <script th:inline="javascript">
+        const currentPerimeter = /*[[${currentPerimeter}]]*/ null;
+
+        if (currentPerimeter != null) {
+            perimeterMap = currentPerimeter.points;
+            choosePerimeterItemById(currentPerimeter.perimeterID);
+            drawPerimeter();
+        } else {
+            console.log("No perimeter selected");
+        }
+    </script>
 
 </body>
 
