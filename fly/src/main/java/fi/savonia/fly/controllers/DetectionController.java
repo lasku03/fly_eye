@@ -49,23 +49,29 @@ public class DetectionController {
     public ResponseEntity<String> addDetectionPoint(@PathVariable int angle, @PathVariable double distance,
             @PathVariable String direction) throws InterruptedException {
         if (RadarState.getCurrentPerimeter() != null) {
-            distance = distance >= RadarState.getScale() ? 0 : distance / RadarState.getScale();
-            distance = Math.round(distance * 100.0) / 100.0;
-            if (!direction.equals(RadarState.getDirection())) {
-                if (!pointsToAdd.isEmpty()) {
-                    pointsQueue.add(new QueueDetection(RadarState.getCurrentDetection(), pointsToAdd));
-                    pointsToAdd = new ArrayList<>();
+            int angleDifference = RadarState.getLastDetectionAngle() == -1 ? 1000 : Math.abs(angle - RadarState.getLastDetectionAngle());
+
+            if ((RadarState.getLastDetectionAngle() == -1 && direction.equals("CLOCKWISE") && angle > 180)
+                    || angleDifference < 180) {
+                distance = distance >= RadarState.getScale() ? 0 : distance / RadarState.getScale();
+                distance = Math.round(distance * 100.0) / 100.0;
+                if (!direction.equals(RadarState.getDirection())) {
+                    if ((angle == 359 || angle == 0) && RadarState.getLastDetectionAngle() != -1) {
+                        int zeroAngle = RadarState.getDirection().equals("CLOCKWISE") ? -1 : 360;
+                        double lastDistance = RadarState.getLastDetectionDistance() == 0 ? 1
+                                : RadarState.getLastDetectionDistance();
+                        double thisDistance = distance == 0 ? 1 : distance;
+                        double distanceToAdd = (thisDistance - lastDistance) / angleDifference;
+                        addMiddlePoints(RadarState.getDirection(), zeroAngle, lastDistance, distanceToAdd);
+                    }
+                    if (!pointsToAdd.isEmpty()) {
+                        pointsQueue.add(new QueueDetection(RadarState.getCurrentDetection(), pointsToAdd));
+                        pointsToAdd = new ArrayList<>();
+                    }
+                    
+                    detectionService.createDetection();
                 }
-                if ((RadarState.getLastDetectionAngle() != 359 || RadarState.getLastDetectionAngle() != 0)
-                        && RadarState.getLastDetectionAngle() != -1) {
-                    int zeroAngle = RadarState.getDirection().equals("CLOCKWISE") ? -1 : 360;
-                    addMiddlePoints(RadarState.getDirection(), zeroAngle, 0, 0);
-                }
-                detectionService.createDetection();
-            }
-            RadarState.setDirection(direction);
-            int angleDifference = Math.abs(angle - RadarState.getLastDetectionAngle());
-            if (RadarState.getLastDetectionAngle() == -1 || angleDifference < 180) {
+                RadarState.setDirection(direction);
                 if (angleDifference > 1) {
                     double lastDistance = 0;
                     double distanceToAdd = 0;
@@ -91,8 +97,11 @@ public class DetectionController {
                 RadarState.setLastDetectionDistance(distance);
 
                 return ResponseEntity.ok("Point added: Angle = " + angle + ", Distance = " + distance);
+            } else {
+                return ResponseEntity.ok("Point ignored");
+
             }
-            return ResponseEntity.ok("Point ignored");
+
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -151,8 +160,12 @@ public class DetectionController {
 
     public boolean isInsideThePerimeter(int angle, double distance) {
         Point perimeterPoint = RadarState.getCurrentPerimeter().getAnglePoint(angle);
-        double perimeterDistance = perimeterPoint.getDistance() == 0 ? 1 : perimeterPoint.getDistance();
-        return perimeterPoint != null && distance > 0 && distance < perimeterDistance - 0.02;
+        if (perimeterPoint != null) {
+            double perimeterDistance = perimeterPoint.getDistance() == 0 ? 1 : perimeterPoint.getDistance();
+            return distance > 0 && distance < perimeterDistance - 0.02;
+        } else {
+            return false;
+        }
     }
 
     public void addPointToCurrentDetection(Point point) {
