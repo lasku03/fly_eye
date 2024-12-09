@@ -2,7 +2,6 @@ package fi.savonia.fly.controllers;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import fi.savonia.fly.domain.detection.model.Detection;
 import fi.savonia.fly.domain.detection.model.QueueDetection;
 import fi.savonia.fly.domain.point.model.Point;
 import fi.savonia.fly.domain.point.model.RadarPoint;
