@@ -35,6 +35,7 @@ public class ConnectionController {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + radarIp + ":8081/stop";
             String response = restTemplate.getForObject(url, String.class);
+            System.out.println(response);
             return true;
         } catch (Exception e) {
             System.out.println(e.getMessage());
