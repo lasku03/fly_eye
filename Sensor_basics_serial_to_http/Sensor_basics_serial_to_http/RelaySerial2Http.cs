@@ -268,6 +268,8 @@ namespace Sensor_basics_serial_to_http
             float distanceFloat = float.Parse(distance);
             string direction = e.Direction;
 
+            /*Console.WriteLine("angle: " + angle);*/
+
             Distance = e.Distance;
             Direction = e.Direction;
 
@@ -290,7 +292,8 @@ namespace Sensor_basics_serial_to_http
 
             if(angle == "359" && (sendHttpMode == enSendHttpMode.MEASUREMENT || sendHttpMode == enSendHttpMode.PERIMETER) && onceSend359 == false)
             {
-                HttpSend.SendData(host, angle, distance, direction);
+                HttpSend.SendData(host, angle, distance, "CLOCKWISE");
+                /*Thread.Sleep(100);
                 if (direction == "CLOCKWISE")
                 {
                     HttpSend.SendData(host, angle, distance, "COUNTERCLOCKWISE");
@@ -298,7 +301,7 @@ namespace Sensor_basics_serial_to_http
                 else
                 {
                     HttpSend.SendData(host, angle, distance, "CLOCKWISE");
-                }
+                }*/
 
                 Angle = angle;
                 onceSend359 = true;
@@ -312,7 +315,8 @@ namespace Sensor_basics_serial_to_http
 
             if (angle == "0" && (sendHttpMode == enSendHttpMode.MEASUREMENT || sendHttpMode == enSendHttpMode.PERIMETER) && onceSend0 == false)
             {
-                HttpSend.SendData(host, angle, distance, direction);
+                HttpSend.SendData(host, angle, distance, "COUNTERCLOCKWISE");
+                /*Thread.Sleep(100);
                 if (direction == "CLOCKWISE")
                 {
                     HttpSend.SendData(host, angle, distance, "COUNTERCLOCKWISE");
@@ -320,8 +324,8 @@ namespace Sensor_basics_serial_to_http
                 else
                 {
                     HttpSend.SendData(host, angle, distance, "CLOCKWISE");
-                }
-                
+                }*/
+
                 Angle = angle;
                 onceSend0 = true;
                 return;
